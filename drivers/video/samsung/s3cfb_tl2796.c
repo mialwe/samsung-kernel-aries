@@ -45,11 +45,6 @@
 extern void init_mdnie_class(void);
 #endif
 
-/**
- * MIDNIGHT lower-brightness adjustments 
- * bmult: 1 = driver default, 5 = lowest, tunable via sysfs
- * min_brightness: dont go lower than this, default 1
- */
 unsigned int bmult = 1; 
 unsigned int min_brightness = 18;
 
