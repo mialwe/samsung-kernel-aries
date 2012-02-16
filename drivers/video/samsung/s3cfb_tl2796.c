@@ -45,9 +45,6 @@
 extern void init_mdnie_class(void);
 #endif
 
-unsigned int bmult = 1; 
-unsigned int min_brightness = 18;
-
 static const struct tl2796_gamma_adj_points default_gamma_adj_points = {
 	.v0 = BV_0,
 	.v1 = BV_1,
@@ -144,36 +141,6 @@ static void setup_gamma_regs(struct s5p_lcd *lcd, u16 gamma_regs[])
 	int c, i;
 	u8 brightness = lcd->bl;
 	const struct tl2796_gamma_adj_points *bv = lcd->gamma_adj_points;
-
-    /**
-     * Lower brightness levels if needed...
-     *
-     * This will lower screen brightness levels more at lower brightness than 
-     * at mid/high levels. Lower brightness modes work with both manual and auto 
-     * brightness. Lower brightness modes and min. brightness setting can be 
-     * combined to get really low brightness (e.g. for dark environment) or
-     * slightly lower brightness with unchanged min. brightness level.
-     * 
-     * To enable lower brightness modes (val = 1-3):
-     * echo <val> > /sys/devices/virtual/misc/color_tuning/brightness_multiplier
-     * val = 1 -> stock, default
-     * val = 2 -> slightly lowered brightness, > 50% almost unchanged
-     * val = 3 -> low brightness, >50% slightly lowered, > 80% almost unchanged
-     * 
-     * To enable lower min_brightness (val = 1-255):
-     * echo <val> > /sys/devices/virtual/misc/color_tuning/min_brightness
-     * val = 18 -> stock, default
-     * val = 1 -> min. value 
-     */ 
-     
-    u8 brightness_orig = lcd->bl;     
-    brightness = (brightness <= 0) ? min_brightness : brightness; // just to be sure...
-    // testing export M=1;export B=18;echo $(($B-(255/$B)*($M*2/(5-$M+1))))
-    //         export M=3;export B=18;echo $(($B-(255/$B)*($M*2/(5-$M+1))/$M*2))
-    brightness = brightness - (255/brightness) * ( bmult*2 / (5-bmult+1) ) / bmult *2;
-    pr_debug("bl after calc: %d",brightness);
-    brightness = (brightness > brightness_orig || brightness < min_brightness) ? min_brightness : brightness;
-    pr_debug("bl after check: %d",brightness);
 
 	for (c = 0; c < 3; c++) {
 		u32 adj;
@@ -728,39 +695,6 @@ static ssize_t blue_v1_offset_store(struct device *dev, struct device_attribute 
 	return size;
 }
 
-static ssize_t min_brightness_show(struct device *dev, struct device_attribute *attr, char *buf)
-{
-	return sprintf(buf, "%u\n", min_brightness);
-}
-
-static ssize_t min_brightness_store(struct device *dev, struct device_attribute *attr, const char *buf, size_t size)
-{
-	u32 value;
-	if (sscanf(buf, "%u", &value) == 1)
-	{
-		min_brightness = value;
-		update_brightness(lcd_);
-	}
-	return size;
-}
-
-static ssize_t brightness_multiplier_show(struct device *dev, struct device_attribute *attr, char *buf)
-{
-	return sprintf(buf, "%u\n", bmult);
-}
-
-static ssize_t brightness_multiplier_store(struct device *dev, struct device_attribute *attr, const char *buf, size_t size)
-{
-	u32 value;
-	if (sscanf(buf, "%u", &value) == 1)
-	{
-		bmult = value;
-		update_brightness(lcd_);
-	}
-	return size;
-}
-static DEVICE_ATTR(min_brightness, S_IRUGO | S_IWUGO, min_brightness_show, min_brightness_store);
-static DEVICE_ATTR(brightness_multiplier, S_IRUGO | S_IWUGO, brightness_multiplier_show, brightness_multiplier_store);
 static DEVICE_ATTR(red_multiplier, S_IRUGO | S_IWUGO, red_multiplier_show, red_multiplier_store);
 static DEVICE_ATTR(green_multiplier, S_IRUGO | S_IWUGO, green_multiplier_show, green_multiplier_store);
 static DEVICE_ATTR(blue_multiplier, S_IRUGO | S_IWUGO, blue_multiplier_show, blue_multiplier_store);
@@ -769,8 +703,6 @@ static DEVICE_ATTR(green_v1_offset, S_IRUGO | S_IWUGO, green_v1_offset_show, gre
 static DEVICE_ATTR(blue_v1_offset, S_IRUGO | S_IWUGO, blue_v1_offset_show, blue_v1_offset_store);
 
 static struct attribute *color_tuning_attributes[] = {
-    &dev_attr_min_brightness.attr,
-	&dev_attr_brightness_multiplier.attr,
 	&dev_attr_red_multiplier.attr,
 	&dev_attr_green_multiplier.attr,
 	&dev_attr_blue_multiplier.attr,
