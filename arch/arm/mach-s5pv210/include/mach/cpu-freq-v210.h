@@ -15,7 +15,7 @@
 #include <linux/cpufreq.h>
 
 enum perf_level {
-    L0, L1, L2, L3, L4, L5, MAX_PERF_LEVEL = L5, // adjusted from L0-L4 to L0-L5 for 1.2Ghz
+    L0, L1, L2, L3, L4, L5, L6, MAX_PERF_LEVEL = L6, // adjusted from L0-L4 to L0-L6 for 1.1Ghz and 1.2Ghz
 };
 
 /* For cpu-freq driver */
