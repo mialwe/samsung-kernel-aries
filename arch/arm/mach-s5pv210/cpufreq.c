@@ -34,7 +34,8 @@ static DEFINE_MUTEX(set_freq_lock);
 
 /* APLL M,P,S values for 2.3G/1G/800Mhz */
 #define APLL_VAL_1200   ((1 << 31) | (150 << 16) | (3 << 8) | 1)
-#define APLL_VAL_1100   ((1 << 31) | (150 << 16) | (3 << 8) | 1)
+#define APLL_VAL_1128   ((1 << 31) | (141 << 16 )| (3 << 8) | 1)
+#define APLL_VAL_1100   ((1 << 31) | (275 << 16) | (6 << 8) | 1)
 #define APLL_VAL_1000	((1 << 31) | (125 << 16) | (3 << 8) | 1)
 #define APLL_VAL_800	((1 << 31) | (100 << 16) | (3 << 8) | 1)
 
@@ -76,7 +77,7 @@ enum s5pv210_dmc_port {
 
 static struct cpufreq_frequency_table s5pv210_freq_table[] = {
 	{L0, 1200*1000},
-	{L1, 1100*1000},
+	{L1, 1128*1000},
 	{L2, 1000*1000},
 	{L3, 800*1000},
 	{L4, 400*1000},
@@ -88,7 +89,7 @@ static struct cpufreq_frequency_table s5pv210_freq_table[] = {
 extern int exp_UV_mV[7];
 unsigned int freq_uv_table[7][3] = {
 	{1200000, 1350, 1350},
-	{1100000, 1300, 1300},
+	{1128000, 1300, 1300},
 	{1000000, 1275, 1275},
 	{800000, 1200, 1200},
 	{400000, 1050, 1050},
@@ -156,7 +157,7 @@ static u32 clkdiv_val[7][11] = {
 	/* L0 : [1200/200/100][166/83][133/66][200/200] */
 	{0, 5, 5, 1, 3, 1, 4, 1, 3, 0, 0},
     
-    /* L1 : [1100/200/200/100][166/83][133/66][200/200] */
+    /* L1 : [1128/200/200/100][166/83][133/66][200/200] */
     {0, 5, 5, 1, 3, 1, 4, 1, 3, 0, 0},    
     
 	/* L2 : [1000/200/100][166/83][133/66][200/200] */
@@ -486,7 +487,7 @@ static int s5pv210_target(struct cpufreq_policy *policy,
 		if (index == L0)
 			__raw_writel(APLL_VAL_1200, S5P_APLL_CON);
 		else if (index == L1)
-			__raw_writel(APLL_VAL_1100, S5P_APLL_CON);
+			__raw_writel(APLL_VAL_1128, S5P_APLL_CON);
 		else if (index == L2)
 			__raw_writel(APLL_VAL_1000, S5P_APLL_CON);
 		else

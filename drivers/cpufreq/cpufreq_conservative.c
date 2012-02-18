@@ -117,14 +117,12 @@ static struct dbs_tuners {
 /**
  * Smooth scaling conservative governor
  *            
- * This tries to circumvent the original newfreq = oldfreq + theshold%
- * calculation resulting in unsupported target frequencies.
- *                                        
- * This modification makes the governor use two lookup tables holding 
- * current, next and previous frequency to directly get a correct 
- * target frequency. The two different scaling lookup tables contain
- * different scaling steps/frequencies to achieve faster upscaling on 
- * higher CPU load.
+ * This modification makes the governor use two lookup tables holding
+ * current, next and previous frequency to directly get a correct
+ * target frequency instead of calculating target frequencies with
+ * up_threshold and step_up %. The two scaling lookup tables used 
+ * contain different scaling steps/frequencies to achieve faster upscaling 
+ * on higher CPU load.
  * 
  * CPU load triggering faster upscaling can be adjusted via SYSFS, 
  * VALUE between 1 and 100 (% CPU load):
