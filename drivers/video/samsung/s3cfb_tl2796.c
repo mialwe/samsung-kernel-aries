@@ -46,7 +46,7 @@ extern void init_mdnie_class(void);
 #endif
 
 // bightness adjustment
-static unsigned int min_brightness = 22;
+static unsigned int min_brightness = 25;
 static unsigned int bmult = 1;
 
 static const struct tl2796_gamma_adj_points default_gamma_adj_points = {
@@ -175,7 +175,7 @@ static void setup_gamma_regs(struct s5p_lcd *lcd, u16 gamma_regs[])
 		//   it consist on a simple (negative) offset applied on v0
 		
         //gamma_regs[c] = (adj > hacky_v1_offset[c] && (adj <=255)) ? (adj - hacky_v1_offset[c]) | 0x100 : adj | 0x100;
-        gamma_regs[c] = ((adj + hacky_v1_offset[c]) > 0 && (adj <=255)) ? (adj + hacky_v1_offset[c]) | 0x100 : adj | 0x100;
+          gamma_regs[c] = ((adj - hacky_v1_offset[c]) > 0 && (adj <=255)) ? (adj - hacky_v1_offset[c]) | 0x100 : adj | 0x100;
 
 		v255 = vx[5] = gamma_lookup(lcd, brightness, bv->v255, c);
 		adj = 600 - 120 - DIV_ROUND_CLOSEST(600 * v255, v0);
