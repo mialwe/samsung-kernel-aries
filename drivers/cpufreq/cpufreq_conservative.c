@@ -30,7 +30,7 @@
 
 // cpu load trigger
 #ifdef MN_SMOOTH
-#define DEF_SMOOTH_UP (75)
+#define DEF_SMOOTH_UP (70)
 #endif
 
 /*
@@ -38,8 +38,8 @@
  * It helps to keep variable names smaller, simpler
  */
 
-#define DEF_FREQUENCY_UP_THRESHOLD		(60)
-#define DEF_FREQUENCY_DOWN_THRESHOLD		(40)
+#define DEF_FREQUENCY_UP_THRESHOLD		(55)
+#define DEF_FREQUENCY_DOWN_THRESHOLD		(35)
 
 /*
  * The polling frequency of this governor depends on the capability of
@@ -531,7 +531,6 @@ static void dbs_check_cpu(struct cpu_dbs_info_s *this_dbs_info)
 	 * policy. To be safe, we focus 10 points under the threshold.
 	 */
 	if (max_load < (dbs_tuners_ins.down_threshold - 10)) {
-		freq_target = (dbs_tuners_ins.freq_step * policy->max) / 100;
 
 		/*
 		 * if we cannot reduce the frequency anymore, break out early
@@ -542,7 +541,8 @@ static void dbs_check_cpu(struct cpu_dbs_info_s *this_dbs_info)
 #ifdef MN_SMOOTH
         this_dbs_info->requested_freq = mn_get_next_freq(policy->cur, MN_DOWN, max_load);
 #else
-		this_dbs_info->requested_freq -= freq_target;
+		freq_target = (dbs_tuners_ins.freq_step * policy->max) / 100;
+        this_dbs_info->requested_freq -= freq_target;
 		if (this_dbs_info->requested_freq < policy->min)
 			this_dbs_info->requested_freq = policy->min;
 #endif
