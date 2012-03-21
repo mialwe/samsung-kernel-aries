@@ -368,6 +368,8 @@ static int s5pv210_target(struct cpufreq_policy *policy,
 		pll_changing = 1;
 	else if ((index == L2) || (priv_index == L2))   // 1Ghz
 		pll_changing = 1;
+	else if ((index == L3) || (priv_index == L3))   // 800Mhz
+		pll_changing = 1;
 	/* Check if there need to change System bus clock */
 	if ((index == L6) || (priv_index == L6))        // 100Mhz
 		bus_speed_changing = 1;
