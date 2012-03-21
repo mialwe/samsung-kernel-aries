@@ -30,7 +30,7 @@
 #include <mach/gpio-aries.h>
 
 #define GPD0_TOUT_1		2 << 4
-#define PWM_PERIOD		(80284 / 2)
+#define PWM_PERIOD		(89284 / 2)
 #define MAX_TIMEOUT		10000 /* 10s */
 
 /*
@@ -42,9 +42,9 @@
  * pwm_duty = used intensity, adjustable via sysfs, e.g.:
  * echo 25000 > /sys/class/timed_output/vibrator/duty
  */
-#define PWM_DUTY_MAX	(80280 / 2)
-#define PWM_DUTY_MIN	(20000)
-static unsigned int pwm_duty = (80280 / 2);
+#define PWM_DUTY_MAX	(87280 / 2)
+#define PWM_DUTY_MIN	(22000)
+static unsigned int pwm_duty = (87280 / 2);
 
 static struct vibrator {
 	struct wake_lock wklock;
