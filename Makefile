@@ -369,9 +369,7 @@ KBUILD_CFLAGS   := -Wall -Wundef -Wstrict-prototypes -Wno-trigraphs \
 		   -Werror-implicit-function-declaration \
 		   -Wno-format-security \
 		   -fno-delete-null-pointer-checks \
-		   -finline-functions -ffast-math -funswitch-loops \
-		   -mtune=cortex-a8 -mfpu=neon \
-		   -mcpu=cortex-a8 -mfloat-abi=softfp
+		   -mcpu=cortex-a8 -mfpu=neon -mfloat-abi=softfp
 KBUILD_AFLAGS_KERNEL :=
 KBUILD_CFLAGS_KERNEL :=
 KBUILD_AFLAGS   := -D__ASSEMBLY__
