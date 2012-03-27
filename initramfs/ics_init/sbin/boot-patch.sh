@@ -50,19 +50,25 @@ if $BB [ ! -f /cache/midnight_block ];then
     if $BB [ -f $xmlfile ];then
         echo "APP: preferences file found, parsing..."
         sched=`$BB sed -n 's|<string name=\"midnight_io\">\(.*\)</string>|\1|p' $xmlfile`
-        echo "APP: IO sched -> $sched"
         cpumax=`$BB sed -n 's|<string name=\"midnight_cpu_max\">\(.*\)</string>|\1|p' $xmlfile`
-        echo "APP: cpumax -> $cpumax"
         cpugov=`$BB sed -n 's|<string name=\"midnight_cpu_gov\">\(.*\)</string>|\1|p' $xmlfile`
-        echo "APP: cpugov -> $cpugov"
         uvatboot=`$BB awk -F"\"" ' /c_toggle_uv_boot\"/ {print $4}' $xmlfile`
-        uv1200=`$BB awk -F"\"" ' /uv_1200\"/ {print $4}' $xmlfile`;#uv1200=$(($uv1200*(-1)))
-        uv1128=`$BB awk -F"\"" ' /uv_1128\"/ {print $4}' $xmlfile`;#uv1128=$(($uv1128*(-1)))
-        uv1000=`$BB awk -F"\"" ' /uv_1000\"/ {print $4}' $xmlfile`;#uv1000=$(($uv1000*(-1)))
-        uv800=`$BB awk -F"\"" ' /uv_800\"/ {print $4}' $xmlfile`;#uv800=$(($uv800*(-1)))
-        uv400=`$BB awk -F"\"" ' /uv_400\"/ {print $4}' $xmlfile`;#uv400=$(($uv400*(-1)))
-        uv200=`$BB awk -F"\"" ' /uv_200\"/ {print $4}' $xmlfile`;#uv200=$(($uv200*(-1)))
-        uv100=`$BB awk -F"\"" ' /uv_100\"/ {print $4}' $xmlfile`;#uv100=$(($uv100*(-1)))
+        uv1200=`$BB awk -F"\"" ' /uv_1200\"/ {print $4}' $xmlfile`;
+        uv1128=`$BB awk -F"\"" ' /uv_1128\"/ {print $4}' $xmlfile`;
+        uv1000=`$BB awk -F"\"" ' /uv_1000\"/ {print $4}' $xmlfile`;
+        uv800=`$BB awk -F"\"" ' /uv_800\"/ {print $4}' $xmlfile`;
+        uv400=`$BB awk -F"\"" ' /uv_400\"/ {print $4}' $xmlfile`;
+        uv200=`$BB awk -F"\"" ' /uv_200\"/ {print $4}' $xmlfile`;
+        uv100=`$BB awk -F"\"" ' /uv_100\"/ {print $4}' $xmlfile`;
+        logcat=`$BB awk -F"\"" ' /c_toggle_logcat\"/ {print $4}' $xmlfile`
+        initd=`$BB awk -F"\"" ' /c_toggle_initd\"/ {print $4}' $xmlfile`
+        readahead=`$BB sed -n 's|<string name=\"midnight_rh\">\(.*\)</string>|\1|p' $xmlfile`
+        vibration_intensity=`$BB awk -F"\"" ' /vibration_intensity\"/ {print $4}' $xmlfile`
+        touchwake=`$BB awk -F"\"" ' /touchwake\"/ {print $4}' $xmlfile`
+        touchwake_timeout=`$BB awk -F"\"" ' /touchwake_timeout\"/ {print $4}' $xmlfile`
+        echo "APP: IO sched -> $sched"
+        echo "APP: cpumax -> $cpumax"
+        echo "APP: cpugov -> $cpugov"
         echo "APP: uv at boot -> $uvatboot"
         echo "APP: uv1200 -> $uv1200"
         echo "APP: uv1128 -> $uv1128"
@@ -71,36 +77,10 @@ if $BB [ ! -f /cache/midnight_block ];then
         echo "APP: uv400  -> $uv400"
         echo "APP: uv200  -> $uv200"
         echo "APP: uv100  -> $uv100"
-        mr=`$BB awk -F"\"" ' /midnight_mul_r\"/ {print $4}' $xmlfile`
-        mg=`$BB awk -F"\"" ' /midnight_mul_g\"/ {print $4}' $xmlfile`
-        mb=`$BB awk -F"\"" ' /midnight_mul_b\"/ {print $4}' $xmlfile`
-        mrn=`$BB awk -F"\"" ' /midnight_mul_r_night\"/ {print $4}' $xmlfile`
-        mgn=`$BB awk -F"\"" ' /midnight_mul_g_night\"/ {print $4}' $xmlfile`
-        mbn=`$BB awk -F"\"" ' /midnight_mul_b_night\"/ {print $4}' $xmlfile`
-        mbright=`$BB awk -F"\"" ' /midnight_mult_brightness\"/ {print $4}' $xmlfile`
-        mbrightn=`$BB awk -F"\"" ' /midnight_mult_brightness_night\"/ {print $4}' $xmlfile`
-        echo "APP: brightness  -> $mbright"
-        echo "APP: mul_r       -> $mr"
-        echo "APP: mul_g       -> $mg"
-        echo "APP: mul_b       -> $mb"
-        echo "APP: brightness_n-> $mbrightn"
-        echo "APP: mul_r_night -> $mrn"
-        echo "APP: mul_g_night -> $mgn"
-        echo "APP: mul_b_night -> $mbn"
-        logcat=`$BB awk -F"\"" ' /c_toggle_logcat\"/ {print $4}' $xmlfile`
-        initd=`$BB awk -F"\"" ' /c_toggle_initd\"/ {print $4}' $xmlfile`
         echo "APP: initd  -> $initd"
         echo "APP: logcat -> $logcat"
-        touch=`$BB sed -n 's|<string name=\"midnight_sensitivity\">\(.*\)</string>|\1|p' $xmlfile`
-        echo "APP: sensitivity -> $touch"
-        lmk=`$BB sed -n 's|<string name=\"midnight_lmk\">\(.*\)</string>|\1|p' $xmlfile`
-        echo "APP: LMK -> $lmk"
-        readahead=`$BB sed -n 's|<string name=\"midnight_rh\">\(.*\)</string>|\1|p' $xmlfile`
         echo "APP: readahead -> $readahead"
-        vibration_intensity=`$BB awk -F"\"" ' /vibration_intensity\"/ {print $4}' $xmlfile`
         echo "APP: vibration intensity -> $vibration_intensity"
-        touchwake=`$BB awk -F"\"" ' /touchwake\"/ {print $4}' $xmlfile`
-        touchwake_timeout=`$BB awk -F"\"" ' /touchwake_timeout\"/ {print $4}' $xmlfile`
         echo "APP: touchwake -> $touchwake"
         echo "APP: touchwake timeout-> $touchwake_timeout"
     else
@@ -114,9 +94,6 @@ fi
 
 # partitions
 echo; echo "mount"
-#busybox mount -o remount,noatime,barrier=0,nobh /system
-#busybox mount -o remount,noatime,barrier=0,nobh /cache
-#busybox mount -o remount,noatime /data
 for i in $($BB mount | $BB grep relatime | $BB cut -d " " -f3);do
     busybox mount -o remount,noatime $i
 done
@@ -161,9 +138,7 @@ cat_msg_sysfile "states_enabled: " /sys/devices/system/cpu/cpu0/cpufreq/states_e
 echo
 echo "freq/voltage  : ";cat /sys/devices/system/cpu/cpu0/cpufreq/frequency_voltage_table
 
-
 # vm tweaks
-# just output of default values for now
 echo; echo "vm"
 echo "0" > /proc/sys/vm/swappiness                   # Not really needed as no /swap used...
 echo "2000" > /proc/sys/vm/dirty_writeback_centisecs # Flush after 20sec. (o:500)
@@ -232,6 +207,7 @@ if $BB [[ "$readahead" -eq 64 || "$readahead" -eq 128 || "$readahead" -eq 256 ||
 else
     readahead=512
 fi
+
 echo $readahead > /sys/devices/virtual/bdi/179:0/read_ahead_kb
 echo $readahead > /sys/devices/virtual/bdi/179:8/read_ahead_kb
 cat_msg_sysfile "179.0: " /sys/devices/virtual/bdi/179:0/read_ahead_kb
@@ -255,7 +231,7 @@ else
     iosched="sio"    
 fi        
 
-# general tweaks
+# general IO tweaks
 for i in $MTD $MMC $LOOP;do
     echo "$iosched" > $i/queue/scheduler
     echo 0 > $i/queue/rotational
@@ -267,6 +243,7 @@ for i in $MTD $MMC;do
     echo 1024 > $i/queue/nr_requests
 done
 
+# log output
 for i in $MTD $MMC $LOOP $RAM;do
     cat_msg_sysfile "$i/queue/scheduler: " $i/queue/scheduler
     cat_msg_sysfile "$i/queue/rotational: " $i/queue/rotational
@@ -347,6 +324,4 @@ if $BB [ "$initd" == "true" ];then
 else
     echo "init.d execution deactivated, nothing to do."
 fi
-              
-#rm /data/data/mobi.cyann.nstools/shared_prefs/mobi.cyann.nstools_preferences.xml
-#rm /datadata/mobi.cyann.nstools/shared_prefs/mobi.cyann.nstools_preferences.xml
+
