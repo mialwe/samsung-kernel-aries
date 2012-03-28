@@ -369,7 +369,7 @@ KBUILD_CFLAGS   := -Wall -Wundef -Wstrict-prototypes -Wno-trigraphs \
 		   -Werror-implicit-function-declaration \
 		   -Wno-format-security \
 		   -fno-delete-null-pointer-checks \
-		   -mtune=cortex-a8 -mfpu=neon -mfloat-abi=softfp \
+		   -mtune=cortex-a8 -mfpu=neon -ftree-vectorize -mfloat-abi=softfp \
 		   --param l2-cache-size=512 --param l1-cache-size=64 --param simultaneous-prefetches=8
 KBUILD_AFLAGS_KERNEL :=
 KBUILD_CFLAGS_KERNEL :=
