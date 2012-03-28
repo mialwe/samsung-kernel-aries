@@ -144,7 +144,7 @@ echo "0" > /proc/sys/vm/swappiness                   # Not really needed as no /
 echo "1500" > /proc/sys/vm/dirty_writeback_centisecs # Flush after 20sec. (o:500)
 echo "1500" > /proc/sys/vm/dirty_expire_centisecs    # Pages expire after 20sec. (o:200)
 echo "5" > /proc/sys/vm/dirty_background_ratio       # flush pages later (default 5% active mem)
-echo "20" > /proc/sys/vm/dirty_ratio                 # process writes pages later (default 20%)  
+echo "15" > /proc/sys/vm/dirty_ratio                 # process writes pages later (default 20%)  
 echo "3" > /proc/sys/vm/page-cluster
 echo "0" > /proc/sys/vm/laptop_mode
 echo "0" > /proc/sys/vm/oom_kill_allocating_task
