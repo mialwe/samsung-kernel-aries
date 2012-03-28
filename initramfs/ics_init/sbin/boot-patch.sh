@@ -162,7 +162,7 @@ cat_msg_sysfile "panic_on_oom: " /proc/sys/vm/panic_on_oom
 cat_msg_sysfile "overcommit_memory: " /proc/sys/vm/overcommit_memory
 
 # security enhancements
-# rp_filter must be reset to 1 if TUN module is used (issues)
+# rp_filter must be reset to 0 if TUN module is used (issues)
 echo; echo "sec"
 echo 0 > /proc/sys/net/ipv4/ip_forward
 echo 0 > /proc/sys/net/ipv4/conf/all/rp_filter
