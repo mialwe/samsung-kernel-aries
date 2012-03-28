@@ -5,9 +5,12 @@
 # user/init.d-scripts.
 #
 
+# set busybox location
+BB="/system/xbin/busybox"
+
 # backup and clean logfile
-/system/xbin/busybox cp /data/user.log /data/user.log.bak
-/system/xbin/busybox rm /data/user.log
+$BB cp /data/user.log /data/user.log.bak
+$BB rm /data/user.log
 
 # start logging
 exec >>/data/user.log
@@ -21,13 +24,10 @@ echo "************************************************"
 echo
 
 # log basic system information
-echo -n "Kernel: ";/system/xbin/busybox uname -r
+echo -n "Kernel: ";$BB uname -r
 echo -n "PATH: ";echo $PATH
-echo -n "ROM: ";cat /system/build.prop|/system/xbin/busybox grep ro.build.display.id
+echo -n "ROM: ";cat /system/build.prop|$BB grep ro.build.display.id
 echo
-
-# set busybox location
-BB="/system/xbin/busybox"
 
 # print file contents <string messagetext><file output>
 cat_msg_sysfile() {
@@ -141,10 +141,10 @@ echo "freq/voltage  : ";cat /sys/devices/system/cpu/cpu0/cpufreq/frequency_volta
 # vm tweaks
 echo; echo "vm"
 echo "0" > /proc/sys/vm/swappiness                   # Not really needed as no /swap used...
-echo "2000" > /proc/sys/vm/dirty_writeback_centisecs # Flush after 20sec. (o:500)
-echo "2000" > /proc/sys/vm/dirty_expire_centisecs    # Pages expire after 20sec. (o:200)
-echo "10" > /proc/sys/vm/dirty_background_ratio      # flush pages later (default 5% active mem)
-echo "65" > /proc/sys/vm/dirty_ratio                 # process writes pages later (default 20%)  
+echo "1500" > /proc/sys/vm/dirty_writeback_centisecs # Flush after 20sec. (o:500)
+echo "1500" > /proc/sys/vm/dirty_expire_centisecs    # Pages expire after 20sec. (o:200)
+echo "5" > /proc/sys/vm/dirty_background_ratio       # flush pages later (default 5% active mem)
+echo "20" > /proc/sys/vm/dirty_ratio                 # process writes pages later (default 20%)  
 echo "3" > /proc/sys/vm/page-cluster
 echo "0" > /proc/sys/vm/laptop_mode
 echo "0" > /proc/sys/vm/oom_kill_allocating_task
