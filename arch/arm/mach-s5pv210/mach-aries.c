@@ -306,10 +306,21 @@ static struct s3cfb_lcd s6e63m0 = {
 };
 
 #define  S5PV210_VIDEO_SAMSUNG_MEMSIZE_FIMC0 (11264 * SZ_1K)
+
+#ifndef CONFIG_HUGERAM
 #define  S5PV210_VIDEO_SAMSUNG_MEMSIZE_FIMC1 (4616 * SZ_1K)
+#endif
+
 #define  S5PV210_VIDEO_SAMSUNG_MEMSIZE_FIMC2 (11264 * SZ_1K)
+
+#ifdef CONFIG_HUGERAM
+#define  S5PV210_VIDEO_SAMSUNG_MEMSIZE_MFC0 (11264 * SZ_1K)
+#define  S5PV210_VIDEO_SAMSUNG_MEMSIZE_MFC1 (11264 * SZ_1K)
+#else
 #define  S5PV210_VIDEO_SAMSUNG_MEMSIZE_MFC0 (32768 * SZ_1K)
 #define  S5PV210_VIDEO_SAMSUNG_MEMSIZE_MFC1 (32768 * SZ_1K)
+#endif
+
 #define  S5PV210_VIDEO_SAMSUNG_MEMSIZE_FIMD (S5PV210_LCD_WIDTH * \
 					     S5PV210_LCD_HEIGHT * 4 * \
 					     (CONFIG_FB_S3C_NR_BUFFERS + \
@@ -344,6 +355,7 @@ static struct s5p_media_device aries_media_devs[] = {
 		.memsize = S5PV210_VIDEO_SAMSUNG_MEMSIZE_FIMC0,
 		.paddr = 0,
 	},
+#ifndef CONFIG_HUGERAM
 	[3] = {
 		.id = S5P_MDEV_FIMC1,
 		.name = "fimc1",
@@ -351,6 +363,7 @@ static struct s5p_media_device aries_media_devs[] = {
 		.memsize = S5PV210_VIDEO_SAMSUNG_MEMSIZE_FIMC1,
 		.paddr = 0,
 	},
+#endif
 	[4] = {
 		.id = S5P_MDEV_FIMC2,
 		.name = "fimc2",
