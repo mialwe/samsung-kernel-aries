@@ -45,7 +45,7 @@ uv100=0;uv200=0;uv400=0;uv800=0;uv1000=0;uv1128=0;uv1200=0;cpumax=1000000;
 # other config files.
 if $BB [ ! -f /cache/midnight_block ];then
     echo "APP: no blocker file present, proceeding..."
-    xmlfile="/datadata/com.mialwe.midnight.control/shared_prefs/com.mialwe.midnight.control_preferences.xml"
+    xmlfile="/data/data/com.mialwe.midnight.control/shared_prefs/com.mialwe.midnight.control_preferences.xml"
     echo "APP: checking app preferences..."
     if $BB [ -f $xmlfile ];then
         echo "APP: preferences file found, parsing..."
