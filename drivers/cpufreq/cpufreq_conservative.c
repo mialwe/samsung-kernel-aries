@@ -30,7 +30,7 @@
 
 // cpu load trigger
 #ifdef MN_SMOOTH
-#define DEF_SMOOTH_UP (65)
+#define DEF_SMOOTH_UP (75)
 #endif
 
 /*
@@ -38,7 +38,7 @@
  * It helps to keep variable names smaller, simpler
  */
 
-#define DEF_FREQUENCY_UP_THRESHOLD		(53)
+#define DEF_FREQUENCY_UP_THRESHOLD		(55)
 #define DEF_FREQUENCY_DOWN_THRESHOLD		(35)
 
 /*
