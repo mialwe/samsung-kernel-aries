@@ -47,7 +47,7 @@ extern void init_mdnie_class(void);
 
 // bightness adjustment
 static unsigned int min_brightness = 25;
-static unsigned int bmult = 1;
+static unsigned int bmult = 0;
 
 static const struct tl2796_gamma_adj_points default_gamma_adj_points = {
 	.v0 = BV_0,
@@ -146,10 +146,15 @@ static void setup_gamma_regs(struct s5p_lcd *lcd, u16 gamma_regs[])
 	u8 brightness = lcd->bl;
 	const struct tl2796_gamma_adj_points *bv = lcd->gamma_adj_points;
 
-    //rightness adjustment
+    /**
+     *  nightmode toggle
+     * bmult = 0 -> brightness not adjusted
+     * bmult = 1 -> nightmode on, brightness always adjusted to min_brightness
+     * keeping the sysfs tunable "brightness_multiplier" (bmult) for now, might be renames
+     * later to "lock_min_brightness" or similar...
+     */
     u8 brightness_orig = lcd->bl; 
-    brightness = brightness - ((255 / brightness) * bmult) + bmult;
-    brightness = (brightness > brightness_orig || brightness < min_brightness) ? min_brightness : brightness;
+    brightness = (bmult != 0) ? min_brightness : brightness;
 
 	for (c = 0; c < 3; c++) {
 		u32 adj;
