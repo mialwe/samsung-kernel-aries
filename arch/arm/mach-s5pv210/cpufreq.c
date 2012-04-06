@@ -21,6 +21,7 @@
 #include <linux/regulator/consumer.h>
 #include <linux/cpufreq.h>
 #include <linux/platform_device.h>
+#include <linux/miscdevice.h>
 
 #include <mach/map.h>
 #include <mach/regs-clock.h>
@@ -31,6 +32,8 @@ static struct clk *dmc0_clk;
 static struct clk *dmc1_clk;
 static struct cpufreq_freqs freqs;
 static DEFINE_MUTEX(set_freq_lock);
+
+bool oc_enable = false;
 
 /* APLL M,P,S values for 1.2G/1G/800Mhz */
 #define APLL_VAL_1200   ((1 << 31) | (150 << 16) | (3 << 8) | 1)
@@ -465,8 +468,11 @@ static int s5pv210_target(struct cpufreq_policy *policy,
 		 * 6-2. Wait untile the PLL is locked
 		 */
 		if (index == L0)
-			__raw_writel(APLL_VAL_1000, S5P_APLL_CON);
-		else
+            if (oc_enable == true)
+                __raw_writel(APLL_VAL_1128, S5P_APLL_CON);
+            else
+                __raw_writel(APLL_VAL_1000, S5P_APLL_CON);
+        else
 			__raw_writel(APLL_VAL_800, S5P_APLL_CON);
 
 		do {
@@ -755,10 +761,95 @@ static struct platform_driver s5pv210_cpufreq_drv = {
 	},
 };
 
+static ssize_t oc_enable_show(struct device *dev, struct device_attribute *attr, char *buf)
+{
+  return sprintf(buf,"%u\n",(oc_enable ? 1 : 0));
+}
+
+static ssize_t oc_enable_store(struct device *dev, struct device_attribute *attr, const char *buf, size_t size)
+{
+  unsigned short state;
+  if (sscanf(buf, "%hu", &state) == 1)
+  {
+    oc_enable = state == 0 ? false : true;
+    if (oc_enable) {
+      s5pv210_change_high_1128();
+    } else {
+      s5pv210_change_high_1000();
+    }    
+  }
+  return size;
+}
+ 
+static DEVICE_ATTR(oc_enable, S_IRUGO | S_IWUGO , oc_enable_show, oc_enable_store);
+ 
+static struct attribute *midnight_cpufreq_attributes[] = {
+    &dev_attr_oc_enable.attr,
+    NULL
+};
+
+static struct attribute_group midnight_cpufreq_group = {
+    .attrs  = midnight_cpufreq_attributes,
+};
+
+static struct miscdevice midnight_cpufreq_device = {
+    .minor = MISC_DYNAMIC_MINOR,
+    .name = "midnight_cpufreq",
+};
+
+void s5pv210_change_high_1128(void)
+{
+  struct cpufreq_policy *policy;
+  unsigned static int oc_freq = 1128;
+  
+  mutex_lock(&set_freq_lock);
+  freq_uv_table[0][0] = oc_freq * 1000;
+  freq_uv_table[0][1] = 1310;
+  freq_uv_table[0][2] = 1310;
+  s5pv210_freq_table[L0].frequency = oc_freq * 1000;
+  dvs_conf[L0].arm_volt = 1310000;
+
+  policy = cpufreq_cpu_get(0);
+  if (policy == NULL)
+    return;
+  policy->max = oc_freq * 1000;
+  policy->cpuinfo.max_freq = oc_freq * 1000;
+  mutex_unlock(&set_freq_lock);
+}
+EXPORT_SYMBOL(s5pv210_change_high_1128);
+
+void s5pv210_change_high_1000(void)
+{
+  struct cpufreq_policy *policy;
+  unsigned static int oc_freq = 1000;
+  
+  mutex_lock(&set_freq_lock);
+  freq_uv_table[0][0] = oc_freq * 1000;
+  freq_uv_table[0][1] = 1275;
+  freq_uv_table[0][2] = 1275;
+  s5pv210_freq_table[L0].frequency = oc_freq * 1000;
+  dvs_conf[L0].arm_volt = 1275000;
+  clkdiv_val[0][1] = 4;
+  clkdiv_val[0][2] = 4;
+
+  policy = cpufreq_cpu_get(0);
+  if (policy == NULL)
+    return;
+  policy->max = oc_freq * 1000;
+  policy->cpuinfo.max_freq = oc_freq * 1000;
+  mutex_unlock(&set_freq_lock);
+}
+EXPORT_SYMBOL(s5pv210_change_high_1000);
+
 static int __init s5pv210_cpufreq_init(void)
 {
 	int ret;
-
+    misc_register(&midnight_cpufreq_device);
+    if (sysfs_create_group(&midnight_cpufreq_device.this_device->kobj, &midnight_cpufreq_group) < 0)
+    {
+      printk("%s sysfs_create_group fail\n", __FUNCTION__);
+      pr_err("Failed to create sysfs group for device (%s)!\n", midnight_cpufreq_device.name);
+    }
 	ret = platform_driver_register(&s5pv210_cpufreq_drv);
 	if (!ret)
 		pr_info("%s: S5PV210 cpu-freq driver\n", __func__);
