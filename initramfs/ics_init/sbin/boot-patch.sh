@@ -97,10 +97,27 @@ mount
 
 # set cpu max freq
 echo; echo "cpu"
-if $BB [[ "$cpumax" -eq 1000000 || "$cpumax" -eq 800000  || "$cpumax" -eq 400000 ]];then
+if $BB [[ "$cpumax" -eq 1128000 || "$cpumax" -eq 1000000 || "$cpumax" -eq 800000  || "$cpumax" -eq 400000 ]];then
     echo "CPU: found vaild cpumax: <$cpumax>"
     echo $cpumax > /sys/devices/system/cpu/cpu0/cpufreq/scaling_max_freq
 fi
+
+#testing
+CONFFILE="midnight_options.conf"
+if $BB [ -f /data/local/$CONFFILE ];then
+    echo "configfile /data/local/midnight_options.conf found, checking values..."
+    if $BB [ "`grep OC1128 /data/local/$CONFFILE`" ]; then
+        echo "oc1128 found, setting..."
+        echo 1 > /sys/devices/virtual/misc/midnight_cpufreq/oc_enable
+        echo 1128000 > /sys/devices/system/cpu/cpu0/cpufreq/scaling_max_freq
+        sleep 1
+    else
+        echo "oc1128 not selected, skipping..."
+    fi
+else
+    echo "/data/local/midnight_options.conf not found, skipping..."
+fi
+$BB insmod /system/lib/modules/cpufreq_stats.ko
 
 # set cpu governor
 if $BB [[ "$cpugov" == "ondemand" || "$cpugov" == "conservative" || "$cpugov" == "smartassV2" ]];then
@@ -281,41 +298,48 @@ $BB mount -o remount,rw /system
 $BB mkdir -p /system/etc/init.d
 $BB mount -o remount,ro /system
 
-if $BB [ "$initd" == "true" ];then
-    echo "starting init.d script execution..."
-    echo $(date) USER EARLY INIT START from /system/etc/init.d
-    if cd /system/etc/init.d >/dev/null 2>&1 ; then
-        for file in E* ; do
-            if ! cat "$file" >/dev/null 2>&1 ; then continue ; fi
-            echo "init.d: START '$file'"
-            /system/bin/sh "$file"
-            echo "init.d: EXIT '$file' ($?)"
-        done
-    fi
-    echo $(date) USER EARLY INIT DONE from /system/etc/init.d
+CONFFILE="midnight_options.conf"
+if $BB [ -f /data/local/$CONFFILE ];then
+    echo "configfile /data/local/midnight_options.conf found, checking values..."
+    if $BB [ "`grep INITD /data/local/$CONFFILE`" ]; then
+        echo "oc1128 found, setting..."
+        echo "starting init.d script execution..."
+        echo $(date) USER EARLY INIT START from /system/etc/init.d
+        if cd /system/etc/init.d >/dev/null 2>&1 ; then
+            for file in E* ; do
+                if ! cat "$file" >/dev/null 2>&1 ; then continue ; fi
+                echo "init.d: START '$file'"
+                /system/bin/sh "$file"
+                echo "init.d: EXIT '$file' ($?)"
+            done
+        fi
+        echo $(date) USER EARLY INIT DONE from /system/etc/init.d
 
-    echo $(date) USER INIT START from /system/etc/init.d
-    if cd /system/etc/init.d >/dev/null 2>&1 ; then
-        for file in S* ; do
-            if ! ls "$file" >/dev/null 2>&1 ; then continue ; fi
-            echo "init.d: START '$file'"
-            /system/bin/sh "$file"
-            echo "init.d: EXIT '$file' ($?)"
-        done
-    fi
-    echo $(date) USER INIT DONE from /system/etc/init.d
+        echo $(date) USER INIT START from /system/etc/init.d
+        if cd /system/etc/init.d >/dev/null 2>&1 ; then
+            for file in S* ; do
+                if ! ls "$file" >/dev/null 2>&1 ; then continue ; fi
+                echo "init.d: START '$file'"
+                /system/bin/sh "$file"
+                echo "init.d: EXIT '$file' ($?)"
+            done
+        fi
+        echo $(date) USER INIT DONE from /system/etc/init.d
 
-    echo $(date) USER INIT START from /system/etc/init.d
-    if cd /system/etc/init.d >/dev/null 2>&1 ; then
-        for file in [0-9][0-9]* ; do
-            if ! ls "$file" >/dev/null 2>&1 ; then continue ; fi
-            echo "init.d: START '$file'"
-            /system/bin/sh "$file"
-            echo "init.d: EXIT '$file' ($?)"
-        done
+        echo $(date) USER INIT START from /system/etc/init.d
+        if cd /system/etc/init.d >/dev/null 2>&1 ; then
+            for file in [0-9][0-9]* ; do
+                if ! ls "$file" >/dev/null 2>&1 ; then continue ; fi
+                echo "init.d: START '$file'"
+                /system/bin/sh "$file"
+                echo "init.d: EXIT '$file' ($?)"
+            done
+        fi
+        echo $(date) USER INIT DONE from /system/etc/init.d
+    else
+        echo "init.d execution deactivated, nothing to do."
     fi
-    echo $(date) USER INIT DONE from /system/etc/init.d
 else
-    echo "init.d execution deactivated, nothing to do."
+    echo "/data/local/midnight_options.conf not found, skipping..."
 fi
 
