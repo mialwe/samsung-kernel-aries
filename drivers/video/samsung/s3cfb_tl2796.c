@@ -150,7 +150,7 @@ static void setup_gamma_regs(struct s5p_lcd *lcd, u16 gamma_regs[])
      *  nightmode toggle
      * bmult = 0 -> brightness not adjusted
      * bmult = 1 -> nightmode on, brightness always adjusted to min_brightness
-     * keeping the sysfs tunable "brightness_multiplier" (bmult) for now, might be renames
+     * keeping the sysfs tunable "brightness_multiplier" (bmult) for now, might be renamed
      * later to "lock_min_brightness" or similar...
      */
     u8 brightness_orig = lcd->bl; 
