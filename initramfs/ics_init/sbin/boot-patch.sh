@@ -27,6 +27,7 @@ echo
 echo -n "Kernel: ";$BB uname -r
 echo -n "PATH: ";echo $PATH
 echo -n "ROM: ";cat /system/build.prop|$BB grep ro.build.display.id
+echo -n "BusyBox:";$BB|$BB grep BusyBox
 echo
 
 # print file contents <string messagetext><file output>
@@ -50,7 +51,7 @@ if $BB [ ! -f /cache/midnight_block ];then
     if $BB [ -f $xmlfile ];then
         echo "APP: preferences file found, parsing..."
         sched=`$BB sed -n 's|<string name=\"midnight_io\">\(.*\)</string>|\1|p' $xmlfile`
-        cpumax=`$BB sed -n 's|<string name=\"midnight_cpu_max\">\(.*\)</string>|\1|p' $xmlfile`
+        limit800=`$BB awk -F"\"" ' /c_toggle_800\"/ {print $4}' $xmlfile`
         cpugov=`$BB sed -n 's|<string name=\"midnight_cpu_gov\">\(.*\)</string>|\1|p' $xmlfile`
         uvatboot=`$BB awk -F"\"" ' /c_toggle_uv_boot\"/ {print $4}' $xmlfile`
         uv1000=`$BB awk -F"\"" ' /uv_1000\"/ {print $4}' $xmlfile`;
@@ -58,14 +59,12 @@ if $BB [ ! -f /cache/midnight_block ];then
         uv400=`$BB awk -F"\"" ' /uv_400\"/ {print $4}' $xmlfile`;
         uv200=`$BB awk -F"\"" ' /uv_200\"/ {print $4}' $xmlfile`;
         uv100=`$BB awk -F"\"" ' /uv_100\"/ {print $4}' $xmlfile`;
-        logcat=`$BB awk -F"\"" ' /c_toggle_logcat\"/ {print $4}' $xmlfile`
-        initd=`$BB awk -F"\"" ' /c_toggle_initd\"/ {print $4}' $xmlfile`
         readahead=`$BB sed -n 's|<string name=\"midnight_rh\">\(.*\)</string>|\1|p' $xmlfile`
         vibration_intensity=`$BB awk -F"\"" ' /vibration_intensity\"/ {print $4}' $xmlfile`
         touchwake=`$BB awk -F"\"" ' /touchwake\"/ {print $4}' $xmlfile`
         touchwake_timeout=`$BB awk -F"\"" ' /touchwake_timeout\"/ {print $4}' $xmlfile`
         echo "APP: IO sched -> $sched"
-        echo "APP: cpumax -> $cpumax"
+        echo "APP: limit800 -> $limit800"
         echo "APP: cpugov -> $cpugov"
         echo "APP: uv at boot -> $uvatboot"
         echo "APP: uv1000 -> $uv1000"
@@ -73,8 +72,6 @@ if $BB [ ! -f /cache/midnight_block ];then
         echo "APP: uv400  -> $uv400"
         echo "APP: uv200  -> $uv200"
         echo "APP: uv100  -> $uv100"
-        echo "APP: initd  -> $initd"
-        echo "APP: logcat -> $logcat"
         echo "APP: readahead -> $readahead"
         echo "APP: vibration intensity -> $vibration_intensity"
         echo "APP: touchwake -> $touchwake"
@@ -97,10 +94,6 @@ mount
 
 # set cpu max freq
 echo; echo "cpu"
-if $BB [[ "$cpumax" -eq 1128000 || "$cpumax" -eq 1000000 || "$cpumax" -eq 800000  || "$cpumax" -eq 400000 ]];then
-    echo "CPU: found vaild cpumax: <$cpumax>"
-    echo $cpumax > /sys/devices/system/cpu/cpu0/cpufreq/scaling_max_freq
-fi
 
 #testing
 CONFFILE="midnight_options.conf"
@@ -110,14 +103,24 @@ if $BB [ -f /data/local/$CONFFILE ];then
         echo "oc1128 found, setting..."
         echo 1 > /sys/devices/virtual/misc/midnight_cpufreq/oc_enable
         echo 1128000 > /sys/devices/system/cpu/cpu0/cpufreq/scaling_max_freq
-        sleep 1
     else
-        echo "oc1128 not selected, skipping..."
+        echo "oc1128 not selected, using 1Ghz max..."
+        echo 1000000 > /sys/devices/system/cpu/cpu0/cpufreq/scaling_max_freq
     fi
 else
-    echo "/data/local/midnight_options.conf not found, skipping..."
+    echo "/data/local/midnight_options.conf not found, using 1Ghz max..."
+    echo 1000000 > /sys/devices/system/cpu/cpu0/cpufreq/scaling_max_freq
 fi
+
+sleep 1
 $BB insmod /system/lib/modules/cpufreq_stats.ko
+
+if $BB [ "$limit800" == "true" ];then
+    echo "found 800Mhz limit, activating..."
+    echo 800000 > /sys/devices/system/cpu/cpu0/cpufreq/scaling_max_freq
+else
+    echo "800Mhz limit deactivated, skipping..."
+fi
 
 # set cpu governor
 if $BB [[ "$cpugov" == "ondemand" || "$cpugov" == "conservative" || "$cpugov" == "smartassV2" ]];then
@@ -135,7 +138,7 @@ if $BB [ ! -f /cache/midnight_block ];then
 fi
 
 # set undervolting
-echo "CPU: values after parsing: $uv1200, $uv1128, $uv1000, $uv800, $uv400, $uv200, $uv100"
+echo "CPU: values after parsing: $uv1000, $uv800, $uv400, $uv200, $uv100"
 if $BB [ "$uvatboot" == "true" ];then
     echo "CPU: UV at boot enabled, setting values now..."
     echo $uv1000 $uv800 $uv400 $uv200 $uv100 > /sys/devices/system/cpu/cpu0/cpufreq/UV_mV_table
@@ -302,7 +305,6 @@ CONFFILE="midnight_options.conf"
 if $BB [ -f /data/local/$CONFFILE ];then
     echo "configfile /data/local/midnight_options.conf found, checking values..."
     if $BB [ "`grep INITD /data/local/$CONFFILE`" ]; then
-        echo "oc1128 found, setting..."
         echo "starting init.d script execution..."
         echo $(date) USER EARLY INIT START from /system/etc/init.d
         if cd /system/etc/init.d >/dev/null 2>&1 ; then
@@ -340,6 +342,6 @@ if $BB [ -f /data/local/$CONFFILE ];then
         echo "init.d execution deactivated, nothing to do."
     fi
 else
-    echo "/data/local/midnight_options.conf not found, skipping..."
+    echo "/data/local/midnight_options.conf not found, no init.d execution, skipping..."
 fi
 
