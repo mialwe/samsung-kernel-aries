@@ -99,7 +99,7 @@ echo; echo "cpu"
 CONFFILE="midnight_options.conf"
 if $BB [ -f /data/local/$CONFFILE ];then
     echo "configfile /data/local/midnight_options.conf found, checking values..."
-    if $BB [ "`grep OC1128 /data/local/$CONFFILE`" ]; then
+    if $BB [ "`/system/xbin/busybox grep OC1128 /data/local/$CONFFILE`" ]; then
         echo "oc1128 found, setting..."
         echo 1 > /sys/devices/virtual/misc/midnight_cpufreq/oc_enable
         echo 1128000 > /sys/devices/system/cpu/cpu0/cpufreq/scaling_max_freq
@@ -304,7 +304,7 @@ $BB mount -o remount,ro /system
 CONFFILE="midnight_options.conf"
 if $BB [ -f /data/local/$CONFFILE ];then
     echo "configfile /data/local/midnight_options.conf found, checking values..."
-    if $BB [ "`grep INITD /data/local/$CONFFILE`" ]; then
+    if $BB [ "`/system/xbin/busybox grep INITD /data/local/$CONFFILE`" ]; then
         echo "starting init.d script execution..."
         echo $(date) USER EARLY INIT START from /system/etc/init.d
         if cd /system/etc/init.d >/dev/null 2>&1 ; then
