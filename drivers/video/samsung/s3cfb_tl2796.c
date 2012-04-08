@@ -155,7 +155,8 @@ static void setup_gamma_regs(struct s5p_lcd *lcd, u16 gamma_regs[])
      */
     u8 brightness_orig = lcd->bl; 
     brightness = (bmult != 0) ? min_brightness : brightness;
-
+    brightness = (brightness > brightness_orig || brightness < min_brightness) ? min_brightness : brightness;
+    
 	for (c = 0; c < 3; c++) {
 		u32 adj;
 		u32 v0 = gamma_lookup(lcd, brightness, BV_0, c);
