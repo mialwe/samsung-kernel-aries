@@ -59,7 +59,6 @@ if $BB [ ! -f /cache/midnight_block ];then
         uv400=`$BB awk -F"\"" ' /uv_400\"/ {print $4}' $xmlfile`;
         uv200=`$BB awk -F"\"" ' /uv_200\"/ {print $4}' $xmlfile`;
         uv100=`$BB awk -F"\"" ' /uv_100\"/ {print $4}' $xmlfile`;
-        readahead=`$BB sed -n 's|<string name=\"midnight_rh\">\(.*\)</string>|\1|p' $xmlfile`
         vibration_intensity=`$BB awk -F"\"" ' /vibration_intensity\"/ {print $4}' $xmlfile`
         touchwake=`$BB awk -F"\"" ' /touchwake\"/ {print $4}' $xmlfile`
         touchwake_timeout=`$BB awk -F"\"" ' /touchwake_timeout\"/ {print $4}' $xmlfile`
@@ -72,7 +71,6 @@ if $BB [ ! -f /cache/midnight_block ];then
         echo "APP: uv400  -> $uv400"
         echo "APP: uv200  -> $uv200"
         echo "APP: uv100  -> $uv100"
-        echo "APP: readahead -> $readahead"
         echo "APP: vibration intensity -> $vibration_intensity"
         echo "APP: touchwake -> $touchwake"
         echo "APP: touchwake timeout-> $touchwake_timeout"
@@ -215,13 +213,7 @@ cat_msg_sysfile "panic: " /proc/sys/kernel/panic
 
 # set sdcard read_ahead
 echo; echo "read_ahead_kb"
-cat_msg_sysfile "default: " /sys/devices/virtual/bdi/default/read_ahead_kb
-if $BB [[ "$readahead" -eq 64 || "$readahead" -eq 128 || "$readahead" -eq 256 || "$readahead" -eq 512  || "$readahead" -eq 1024 || "$readahead" -eq 2048 || "$readahead" -eq 3096 ]];then
-    echo "CPU: found vaild readahead: <$readahead>"
-else
-    readahead=256
-fi
-
+readahead=256
 echo $readahead > /sys/devices/virtual/bdi/179:0/read_ahead_kb
 echo $readahead > /sys/devices/virtual/bdi/179:8/read_ahead_kb
 cat_msg_sysfile "179.0: " /sys/devices/virtual/bdi/179:0/read_ahead_kb
