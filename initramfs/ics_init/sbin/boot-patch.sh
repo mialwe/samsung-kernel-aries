@@ -265,9 +265,7 @@ fi
 echo;echo "bln"
 cat_msg_sysfile "/sys/class/misc/backlightnotification/enabled: " /sys/class/misc/backlightnotification/enabled
 
-# init.d support 
-# executes <E>scriptname, <S>scriptname, <0-9><0-9>scriptname
-# in this order.
+# init.d support, executes all /system/etc/init.d/<S>scriptname files
 echo; echo "init.d"
 echo "creating /system/etc/init.d..."
 $BB mount -o remount,rw /system
