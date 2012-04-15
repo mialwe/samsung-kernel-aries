@@ -50,6 +50,7 @@ if $BB [ ! -f /cache/midnight_block ];then
     echo "APP: checking app preferences..."
     if $BB [ -f $xmlfile ];then
         echo "APP: preferences file found, parsing..."
+        sched=`$BB sed -n 's|<string name=\"midnight_io\">\(.*\)</string>|\1|p' $xmlfile`
         limit800=`$BB awk -F"\"" ' /c_toggle_800\"/ {print $4}' $xmlfile`
         uvatboot=`$BB awk -F"\"" ' /c_toggle_uv_boot\"/ {print $4}' $xmlfile`
         uv1000=`$BB awk -F"\"" ' /uv_1000\"/ {print $4}' $xmlfile`;
@@ -60,6 +61,7 @@ if $BB [ ! -f /cache/midnight_block ];then
         vibration_intensity=`$BB awk -F"\"" ' /vibration_intensity\"/ {print $4}' $xmlfile`
         touchwake=`$BB awk -F"\"" ' /touchwake\"/ {print $4}' $xmlfile`
         touchwake_timeout=`$BB awk -F"\"" ' /touchwake_timeout\"/ {print $4}' $xmlfile`
+        echo "APP: IO sched -> $sched"
         echo "APP: limit800 -> $limit800"
         echo "APP: uv at boot -> $uvatboot"
         echo "APP: uv1000 -> $uv1000"
@@ -218,6 +220,14 @@ echo; echo "io"
 MTD=`$BB ls -d /sys/block/mtdblock*`
 LOOP=`$BB ls -d /sys/block/loop*`
 MMC=`$BB ls -d /sys/block/mmc*`
+
+# set IO scheduler    
+if $BB [[ "$sched" == "noop" || "$sched" == "sio" ]];then
+    iosched=$sched    
+    echo "IO: found valid IO scheduler <$iosched>..."
+else
+    iosched="sio"    
+fi        
 
 # general IO tweaks
 for i in $MTD $MMC $LOOP;do
