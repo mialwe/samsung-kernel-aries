@@ -52,6 +52,7 @@ if $BB [ ! -f /cache/midnight_block ];then
         echo "APP: preferences file found, parsing..."
         sched=`$BB sed -n 's|<string name=\"midnight_io\">\(.*\)</string>|\1|p' $xmlfile`
         limit800=`$BB awk -F"\"" ' /c_toggle_800\"/ {print $4}' $xmlfile`
+        cpugov=`$BB sed -n 's|<string name=\"midnight_cpu_gov\">\(.*\)</string>|\1|p' $xmlfile`
         uvatboot=`$BB awk -F"\"" ' /c_toggle_uv_boot\"/ {print $4}' $xmlfile`
         uv1000=`$BB awk -F"\"" ' /uv_1000\"/ {print $4}' $xmlfile`;
         uv800=`$BB awk -F"\"" ' /uv_800\"/ {print $4}' $xmlfile`;
@@ -63,6 +64,7 @@ if $BB [ ! -f /cache/midnight_block ];then
         touchwake_timeout=`$BB awk -F"\"" ' /touchwake_timeout\"/ {print $4}' $xmlfile`
         echo "APP: IO sched -> $sched"
         echo "APP: limit800 -> $limit800"
+        echo "APP: cpugov -> $cpugov"
         echo "APP: uv at boot -> $uvatboot"
         echo "APP: uv1000 -> $uv1000"
         echo "APP: uv800  -> $uv800"
@@ -116,6 +118,12 @@ if $BB [ "$limit800" == "true" ];then
     echo 800000 > /sys/devices/system/cpu/cpu0/cpufreq/scaling_max_freq
 else
     echo "800Mhz limit deactivated, skipping..."
+fi
+
+# set cpu governor
+if $BB [[ "$cpugov" == "ondemand" || "$cpugov" == "conservative" || "$cpugov" == "smartassV2" ]];then
+    echo "CPU: found vaild cpugov: <$cpugov>"
+    echo $cpugov > /sys/devices/system/cpu/cpu0/cpufreq/scaling_governor
 fi
 
 # parse undervolting
