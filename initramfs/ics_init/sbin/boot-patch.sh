@@ -221,6 +221,7 @@ MMC=`$BB ls -d /sys/block/mmc*`
 
 # general IO tweaks
 for i in $MTD $MMC $LOOP;do
+    echo "$iosched" > $i/queue/scheduler
     echo 0 > $i/queue/rotational
     echo 0 > $i/queue/iostats
 done
