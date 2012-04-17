@@ -30,7 +30,7 @@
 
 // cpu load trigger
 #ifdef MN_SMOOTH
-#define DEF_SMOOTH_UP (80)
+#define DEF_SMOOTH_UP (75)
 #endif
 
 /*
@@ -38,8 +38,8 @@
  * It helps to keep variable names smaller, simpler
  */
 
-#define DEF_FREQUENCY_UP_THRESHOLD		(65)
-#define DEF_FREQUENCY_DOWN_THRESHOLD		(32)
+#define DEF_FREQUENCY_UP_THRESHOLD		(58)
+#define DEF_FREQUENCY_DOWN_THRESHOLD		(39)
 
 /*
  * The polling frequency of this governor depends on the capability of
