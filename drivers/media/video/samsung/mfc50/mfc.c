@@ -473,8 +473,11 @@ static int mfc_mmap(struct file *filp, struct vm_area_struct *vma)
 		return -EINVAL;
 	}
 
+#ifdef CM9
+    mfc_ctx->port0_mmap_size = mfc_port0_memsize - firmware_size;
+#else
 	mfc_ctx->port0_mmap_size = (vir_size / 2);
-
+#endif
 	vma->vm_flags |= VM_RESERVED | VM_IO;
 	if (mfc_ctx->buf_type != MFC_BUFFER_CACHE)
 		vma->vm_page_prot = pgprot_noncached(vma->vm_page_prot);

@@ -38,8 +38,11 @@
 #define IOCTL_MFC_BUF_CACHE			0x00801000
 
 /* MFC H/W support maximum 32 extra DPB */
+#ifdef CM9
+#define MFC_MAX_EXTRA_DPB                      4
+#else
 #define MFC_MAX_EXTRA_DPB                      5
-
+#endif
 #define ENC_PROFILE_LEVEL(profile, level)      ((profile) | ((level) << 8))
 
 #define ENC_PROFILE_MPEG4_SP                   0
