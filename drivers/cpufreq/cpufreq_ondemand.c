@@ -41,6 +41,8 @@
 
 // raise sampling rate to SR*multiplier on blank screen
 static unsigned int sampling_rate_awake;
+static unsigned int up_threshold_awake;
+
 #define SAMPLING_RATE_SLEEP_MULTIPLIER (3)
 
 /*
@@ -628,7 +630,9 @@ static void powersave_early_suspend(struct early_suspend *handler)
 {
   mutex_lock(&dbs_mutex);
   sampling_rate_awake = dbs_tuners_ins.sampling_rate;
+  up_threshold_awake = dbs_tuners_ins.up_threshold;
   dbs_tuners_ins.sampling_rate *= SAMPLING_RATE_SLEEP_MULTIPLIER;
+  dbs_tuners_ins.up_threshold = 90;
   mutex_unlock(&dbs_mutex);
 }
 
@@ -636,6 +640,7 @@ static void powersave_late_resume(struct early_suspend *handler)
 {
   mutex_lock(&dbs_mutex);
   dbs_tuners_ins.sampling_rate = sampling_rate_awake;
+  dbs_tuners_ins.up_threshold = up_threshold_awake;
   mutex_unlock(&dbs_mutex);
 }
 
@@ -703,6 +708,7 @@ static int cpufreq_governor_dbs(struct cpufreq_policy *policy,
 				max(min_sampling_rate,
 				    latency * LATENCY_MULTIPLIER);
             sampling_rate_awake = dbs_tuners_ins.sampling_rate;
+            up_threshold_awake = dbs_tuners_ins.up_threshold;
 			dbs_tuners_ins.io_is_busy = should_io_be_busy();
 		}
 		mutex_unlock(&dbs_mutex);
