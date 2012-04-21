@@ -15,7 +15,7 @@
 #include <linux/cpufreq.h>
 
 enum perf_level {
-    L0, L1, L2, L3, L4, MAX_PERF_LEVEL = L4,
+    L0, L1, L2, L3, L4, L5, L6, MAX_PERF_LEVEL = L6, // adjusted from L0-L4 to L0-L6 for 1.1Ghz and 1.2Ghz
 };
 
 /* For cpu-freq driver */
@@ -52,5 +52,5 @@ extern void s5pv210_cpufreq_set_platdata(struct s5pv210_cpufreq_data *pdata);
 
 #endif /* __ASM_ARCH_CPU_FREQ_H */
 
-void s5pv210_change_high_1000(void);
-void s5pv210_change_high_1128(void);
+void s5pv210_oc_enable(void);
+void s5pv210_oc_disable(void);
