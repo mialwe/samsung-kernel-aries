@@ -78,16 +78,9 @@ enum s5pv210_dmc_port {
 	DMC1,
 };
 
-/* L0. L1, L2 = 1000Mhz to prevent
- * with overclocked maxfreq reboots.
- * 
- * When initramfs state is reached use
- * echo 1 > /sys/devices/virtual/misc/midnight_cpufreq/oc_enable
- * to enable full frequency scaling 100/200/400/800/1000/1128/1200Mhz.
- */ 
 static struct cpufreq_frequency_table s5pv210_freq_table[] = {
-	{L0, 1000*1000},
-	{L1, 1000*1000},
+	{L0, 1200*1000},
+	{L1, 1128*1000},
 	{L2, 1000*1000},
 	{L3, 800*1000},
 	{L4, 400*1000},
@@ -98,8 +91,8 @@ static struct cpufreq_frequency_table s5pv210_freq_table[] = {
 
 extern int exp_UV_mV[7];
 unsigned int freq_uv_table[7][3] = {
-	{1000000, 1275, 1275},
-	{1000000, 1275, 1275},
+	{1200000, 1350, 1350},
+	{1128000, 1310, 1310},
 	{1000000, 1275, 1275},
 	{800000, 1200, 1200},
 	{400000, 1050, 1050},
@@ -127,11 +120,11 @@ const unsigned long int_volt_max = 1250000;
 
 static struct s5pv210_dvs_conf dvs_conf[] = {
 	[L0] = {
-		.arm_volt   = 1275000,
-		.int_volt   = 1100000,
+		.arm_volt   = 1350000,
+		.int_volt   = 1125000,
 	},
 	[L1] = {
-		.arm_volt   = 1275000,
+		.arm_volt   = 1310000,
 		.int_volt   = 1100000,
 	},
 	[L2] = {
@@ -165,10 +158,10 @@ static u32 clkdiv_val[7][11] = {
 	 */
 
 	/* L0 : [1200/200/100][166/83][133/66][200/200] */
-	{0, 4, 4, 1, 3, 1, 4, 1, 3, 0, 0},
+	{0, 5, 5, 1, 3, 1, 4, 1, 3, 0, 0},
     
     /* L1 : [1128/200/200/100][166/83][133/66][200/200] */
-    {0, 4, 4, 1, 3, 1, 4, 1, 3, 0, 0},    
+    {0, 5, 5, 1, 3, 1, 4, 1, 3, 0, 0},    
     
 	/* L2 : [1000/200/100][166/83][133/66][200/200] */
 	{0, 4, 4, 1, 3, 1, 4, 1, 3, 0, 0},
@@ -496,21 +489,14 @@ static int s5pv210_target(struct cpufreq_policy *policy,
 		 * 6-1. Set PMS values
 		 * 6-2. Wait untile the PLL is locked
 		 */
-        if (oc_enable == true){ 
-            if (index == L0)
-                __raw_writel(APLL_VAL_1200, S5P_APLL_CON);
-            else if (index == L1)
-                __raw_writel(APLL_VAL_1128, S5P_APLL_CON);
-            else if (index == L2)
-                __raw_writel(APLL_VAL_1000, S5P_APLL_CON);
-            else
-                __raw_writel(APLL_VAL_800, S5P_APLL_CON);
-        }else{
-            if (index == L0 || index == L1 || index == L2 )
-                __raw_writel(APLL_VAL_1000, S5P_APLL_CON);
-            else
-                __raw_writel(APLL_VAL_800, S5P_APLL_CON);            
-        }
+        if (index == L0)
+            __raw_writel(APLL_VAL_1200, S5P_APLL_CON);
+        else if (index == L1)
+            __raw_writel(APLL_VAL_1128, S5P_APLL_CON);
+        else if (index == L2)
+            __raw_writel(APLL_VAL_1000, S5P_APLL_CON);
+        else
+            __raw_writel(APLL_VAL_800, S5P_APLL_CON);
 
 		do {
 			reg = __raw_readl(S5P_APLL_CON);
@@ -753,6 +739,7 @@ static struct notifier_block s5pv210_cpufreq_reboot_notifier = {
 static int __init s5pv210_cpufreq_probe(struct platform_device *pdev)
 {
 	struct s5pv210_cpufreq_data *pdata = dev_get_platdata(&pdev->dev);
+    struct cpufreq_policy *policy;
 	int i, j;
 
 	if (pdata && pdata->size) {
@@ -787,7 +774,11 @@ finish:
 	register_pm_notifier(&s5pv210_cpufreq_notifier);
 	register_reboot_notifier(&s5pv210_cpufreq_reboot_notifier);
 
-	return cpufreq_register_driver(&s5pv210_driver);
+	int ret = cpufreq_register_driver(&s5pv210_driver);
+    policy = cpufreq_cpu_get(0);
+    policy->max = 1000 * 1000;
+    policy->cpuinfo.max_freq = 1000 * 1000;    
+    return ret;
 }
 
 static struct platform_driver s5pv210_cpufreq_drv = {
@@ -837,33 +828,11 @@ static struct miscdevice midnight_cpufreq_device = {
 void s5pv210_oc_enable(void)
 {
   struct cpufreq_policy *policy;
-  unsigned static int oc_freq_l0 = 1200;
-  unsigned static int oc_freq_l1 = 1128;
-  
-  mutex_lock(&set_freq_lock);
-
-  // L0 1.2Ghz
-  freq_uv_table[0][0] = oc_freq_l0 * 1000;
-  freq_uv_table[0][1] = 1350;
-  freq_uv_table[0][2] = 1350;
-  s5pv210_freq_table[L0].frequency = oc_freq_l0 * 1000;
-  dvs_conf[L0].arm_volt = 1350000;
-  dvs_conf[L0].int_volt = 1125000;
-
-  // L1 1.128Ghz
-  freq_uv_table[1][0] = oc_freq_l1 * 1000;
-  freq_uv_table[1][1] = 1310;
-  freq_uv_table[1][2] = 1310;
-  s5pv210_freq_table[L1].frequency = oc_freq_l1 * 1000;
-  dvs_conf[L1].arm_volt = 1310000;
-
   policy = cpufreq_cpu_get(0);
   if (policy == NULL)
     return;
-    
-  // 1Ghz maxfreq, let users decide via sysfs  
-  policy->max = oc_freq_l0 * 1000;
-  policy->cpuinfo.max_freq = oc_freq_l0 * 1000;
+  policy->max = 1200 * 1000;
+  policy->cpuinfo.max_freq = 1200 * 1000;
   mutex_unlock(&set_freq_lock);
 }
 EXPORT_SYMBOL(s5pv210_oc_enable);
@@ -871,35 +840,11 @@ EXPORT_SYMBOL(s5pv210_oc_enable);
 void s5pv210_oc_disable(void)
 {
   struct cpufreq_policy *policy;
-  unsigned static int oc_freq = 1000;
-  
-  mutex_lock(&set_freq_lock);
-
-  // L0 1.2Ghz -> 1Ghz  
-  freq_uv_table[0][0] = oc_freq * 1000;
-  freq_uv_table[0][1] = 1275;
-  freq_uv_table[0][2] = 1275;
-  s5pv210_freq_table[L0].frequency = oc_freq * 1000;
-  dvs_conf[L0].arm_volt = 1275000;
-  dvs_conf[L0].int_volt = 1100000;
-
-  clkdiv_val[0][1] = 4;
-  clkdiv_val[0][2] = 4;
-
-  // L1 1.128Ghz -> 1Ghz
-  freq_uv_table[1][0] = oc_freq * 1000;
-  freq_uv_table[1][1] = 1275;
-  freq_uv_table[1][2] = 1275;
-  s5pv210_freq_table[L1].frequency = oc_freq * 1000;
-  dvs_conf[L1].arm_volt = 1275000;
-  clkdiv_val[1][1] = 4;
-  clkdiv_val[1][2] = 4;
-
   policy = cpufreq_cpu_get(0);
   if (policy == NULL)
     return;
-  policy->max = oc_freq * 1000;
-  policy->cpuinfo.max_freq = oc_freq * 1000;
+  policy->max = 1000 * 1000;
+  policy->cpuinfo.max_freq = 1000 * 1000;
   mutex_unlock(&set_freq_lock);
 }
 EXPORT_SYMBOL(s5pv210_oc_disable);
