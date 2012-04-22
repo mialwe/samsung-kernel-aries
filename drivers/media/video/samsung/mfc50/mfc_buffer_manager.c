@@ -164,7 +164,7 @@ int mfc_init_buffer(void)
 			free_node->size = mfc_port1_memsize;
 		} else {
 			free_node->start_addr = mfc_get_port0_buff_paddr();
-#ifdef CM9
+#ifdef CONFIG_CM9
             free_node->size = mfc_port0_memsize -
 #else
 			free_node->size = mfc_port1_memsize -

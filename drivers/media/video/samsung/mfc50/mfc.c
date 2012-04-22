@@ -473,7 +473,7 @@ static int mfc_mmap(struct file *filp, struct vm_area_struct *vma)
 		return -EINVAL;
 	}
 
-#ifdef CM9
+#ifdef CONFIG_CM9
     mfc_ctx->port0_mmap_size = mfc_port0_memsize - firmware_size;
 #else
 	mfc_ctx->port0_mmap_size = (vir_size / 2);

@@ -38,7 +38,7 @@
 #define IOCTL_MFC_BUF_CACHE			0x00801000
 
 /* MFC H/W support maximum 32 extra DPB */
-#ifdef CM9
+#ifdef CONFIG_CM9
 #define MFC_MAX_EXTRA_DPB                      4
 #else
 #define MFC_MAX_EXTRA_DPB                      5
