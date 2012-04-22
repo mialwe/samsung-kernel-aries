@@ -132,20 +132,18 @@ static struct dbs_tuners {
 #define MN_UP 1
 #define MN_DOWN 2
 
-static int mn_freqs[7][3]={
-    {1200000,1200000,1128000},
-    {1128000,1200000,1000000},
-    {1000000,1128000,800000},
-    {800000,1000000,400000},
+static int mn_freqs[6][3]={
+    {1128000,1128000,800000},
+    {1000000,1000000,800000},
+    {800000,1128000,400000},
     {400000,800000,200000},
     {200000,400000,100000},
     {100000,200000,100000}
 };
 
-static int mn_freqs_power[7][3]={
-    {1200000,1200000,1128000},
-    {1128000,1200000,1000000},
-    {1000000,1200000,800000},
+static int mn_freqs_power[6][3]={
+    {1128000,1128000,800000},
+    {1000000,1000000,800000},
     {800000,1128000,400000},
     {400000,1128000,200000},
     {200000,800000,100000},
@@ -156,7 +154,7 @@ static int mn_get_next_freq(unsigned int curfreq, unsigned int updown, unsigned 
     int i=0;
     if (load < dbs_tuners_ins.smooth_up)
     {
-        for(i = 0; i < 7; i++)
+        for(i = 0; i < 6; i++)
         {
             if(curfreq == mn_freqs[i][MN_FREQ])
                 return mn_freqs[i][updown]; // updown 1|2
