@@ -303,17 +303,26 @@ CONFFILE="midnight_options.conf"
 if $BB [ -f /data/local/$CONFFILE ];then
     echo "configfile /data/local/midnight_options.conf found, checking values..."
     if $BB [ "`/system/xbin/busybox grep INITD /data/local/$CONFFILE`" ]; then
-        echo "starting init.d script execution..."
         echo $(date) USER INIT START from /system/etc/init.d
         if cd /system/etc/init.d >/dev/null 2>&1 ; then
             for file in S* ; do
                 if ! ls "$file" >/dev/null 2>&1 ; then continue ; fi
-                echo "init.d: START '$file'"
+                echo "/system/etc/init.d: START '$file'"
                 /system/bin/sh "$file"
-                echo "init.d: EXIT '$file' ($?)"
+                echo "/system/etc/init.d: EXIT '$file' ($?)"
             done
         fi
         echo $(date) USER INIT DONE from /system/etc/init.d
+        echo $(date) USER INIT START from /data/local/userinit.d
+        if cd /data/local/userinit.d >/dev/null 2>&1 ; then
+            for file in S* ; do
+                if ! ls "$file" >/dev/null 2>&1 ; then continue ; fi
+                echo "/data/local/userinit.d: START '$file'"
+                /system/bin/sh "$file"
+                echo "/data/local/userinit.d: EXIT '$file' ($?)"
+            done
+        fi
+        echo $(date) USER INIT DONE from /data/local/init.d
     else
         echo "init.d execution deactivated, nothing to do."
     fi
