@@ -2,7 +2,10 @@ import init.aries.usb.rc
 
 on init
     loglevel 9
-    export PHONE_STORAGE /mnt/emmc
+# Samsung
+#    export PHONE_STORAGE /mnt/emmc
+# CM9
+    export SECONDARY_STORAGE /mnt/emmc
     export EXTERNAL_STORAGE /mnt/sdcard
 
     # FIXME: Market checks this variable for space-checking, but downloads to /datadata
