@@ -39,7 +39,7 @@ cat_msg_sysfile() {
 }
 
 #initialize cpu
-uv100=0;uv200=0;uv400=0;uv800=0;uv1000=0;uv1128=0;uv1200=0;cpumax=1000000;
+uv100=0;uv200=0;uv400=0;uv800=0;uv1000=0;cpumax=1000000;
 
 # app settings parsing
 # this gets all values directly from the app shared_prefs file, no need for
@@ -51,11 +51,9 @@ if $BB [ ! -f /cache/midnight_block ];then
     if $BB [ -f $xmlfile ];then
         echo "APP: preferences file found, parsing..."
         sched=`$BB sed -n 's|<string name=\"midnight_io\">\(.*\)</string>|\1|p' $xmlfile`
+        limit800=`$BB awk -F"\"" ' /c_toggle_800\"/ {print $4}' $xmlfile`
         cpugov=`$BB sed -n 's|<string name=\"midnight_cpu_gov\">\(.*\)</string>|\1|p' $xmlfile`
-        cpumax=`$BB sed -n 's|<string name=\"midnight_cpu_max\">\(.*\)</string>|\1|p' $xmlfile`
         uvatboot=`$BB awk -F"\"" ' /c_toggle_uv_boot\"/ {print $4}' $xmlfile`
-        uv1200=`$BB awk -F"\"" ' /uv_1200\"/ {print $4}' $xmlfile`;
-        uv1128=`$BB awk -F"\"" ' /uv_1128\"/ {print $4}' $xmlfile`;
         uv1000=`$BB awk -F"\"" ' /uv_1000\"/ {print $4}' $xmlfile`;
         uv800=`$BB awk -F"\"" ' /uv_800\"/ {print $4}' $xmlfile`;
         uv400=`$BB awk -F"\"" ' /uv_400\"/ {print $4}' $xmlfile`;
@@ -69,8 +67,6 @@ if $BB [ ! -f /cache/midnight_block ];then
         echo "APP: limit800 -> $limit800"
         echo "APP: cpugov -> $cpugov"
         echo "APP: uv at boot -> $uvatboot"
-        echo "APP: uv1200 -> $uv1200"
-        echo "APP: uv1128 -> $uv1128"
         echo "APP: uv1000 -> $uv1000"
         echo "APP: uv800  -> $uv800"
         echo "APP: uv400  -> $uv400"
@@ -98,25 +94,42 @@ mount
 
 # set cpu max freq
 echo; echo "cpu"
-echo 1 > /sys/devices/virtual/misc/midnight_cpufreq/oc_enable
-if $BB [[ "$cpumax" -eq 1200000 || "$cpumax" -eq 1128000 || "$cpumax" -eq 1000000 || "$cpumax" -eq 800000  || "$cpumax" -eq 400000 ]];then
-     echo "found vaild cpumax: <$cpumax>"
-     echo $cpumax > /sys/devices/system/cpu/cpu0/cpufreq/scaling_max_freq
+
+#testing
+CONFFILE="midnight_options.conf"
+if $BB [ -f /data/local/$CONFFILE ];then
+    echo "configfile /data/local/midnight_options.conf found, checking values..."
+    if $BB [ "`/system/xbin/busybox grep OC1128 /data/local/$CONFFILE`" ]; then
+        echo "oc1128 found, setting..."
+        echo 1 > /sys/devices/virtual/misc/midnight_cpufreq/oc_enable
+        echo 1128000 > /sys/devices/system/cpu/cpu0/cpufreq/scaling_max_freq
+    else
+        echo "oc1128 not selected, using 1Ghz max..."
+        echo 1000000 > /sys/devices/system/cpu/cpu0/cpufreq/scaling_max_freq
+    fi
+else
+    echo "/data/local/midnight_options.conf not found, using 1Ghz max..."
+    echo 1000000 > /sys/devices/system/cpu/cpu0/cpufreq/scaling_max_freq
 fi
 
 sleep 1
 $BB insmod /system/lib/modules/cpufreq_stats.ko
 
+if $BB [ "$limit800" == "true" ];then
+    echo "found 800Mhz limit, activating..."
+    echo 800000 > /sys/devices/system/cpu/cpu0/cpufreq/scaling_max_freq
+else
+    echo "800Mhz limit deactivated, skipping..."
+fi
+
 # set cpu governor
 if $BB [[ "$cpugov" == "ondemand" || "$cpugov" == "conservative" || "$cpugov" == "smartassV2" ]];then
-    echo "found vaild cpugov: <$cpugov>"
+    echo "CPU: found vaild cpugov: <$cpugov>"
     echo $cpugov > /sys/devices/system/cpu/cpu0/cpufreq/scaling_governor
 fi
 
 # parse undervolting
 if $BB [ ! -f /cache/midnight_block ];then
-    if $BB [ "$uv1200" -lt 0 ];then uv1200=$(($uv1200*(-1)));else uv1200=0;fi
-    if $BB [ "$uv1128" -lt 0 ];then uv1128=$(($uv1128*(-1)));else uv1128=0;fi
     if $BB [ "$uv1000" -lt 0 ];then uv1000=$(($uv1000*(-1)));else uv1000=0;fi
     if $BB [ "$uv800" -lt 0 ];then uv800=$(($uv800*(-1)));else uv800=0;fi
     if $BB [ "$uv400" -lt 0 ];then uv400=$(($uv400*(-1)));else uv400=0;fi
@@ -125,16 +138,16 @@ if $BB [ ! -f /cache/midnight_block ];then
 fi
 
 # set undervolting
-echo "uv values after parsing: $uv1200, $uv1128, $uv1000, $uv800, $uv400, $uv200, $uv100"
+echo "CPU: values after parsing: $uv1000, $uv800, $uv400, $uv200, $uv100"
 if $BB [ "$uvatboot" == "true" ];then
-    echo "uv at boot enabled, setting values now..."
-    echo $uv1200 $uv1128 $uv1000 $uv800 $uv400 $uv200 $uv100 > /sys/devices/system/cpu/cpu0/cpufreq/UV_mV_table
+    echo "CPU: UV at boot enabled, setting values now..."
+    echo $uv1000 $uv800 $uv400 $uv200 $uv100 > /sys/devices/system/cpu/cpu0/cpufreq/UV_mV_table
 fi
 
 # debug output
 cat_msg_sysfile "max           : " /sys/devices/system/cpu/cpu0/cpufreq/scaling_max_freq
 cat_msg_sysfile "gov           : " /sys/devices/system/cpu/cpu0/cpufreq/scaling_governor
-cat_msg_sysfile "uv_mv         : " /sys/devices/system/cpu/cpu0/cpufreq/UV_mV_table
+cat_msg_sysfile "UV_mv         : " /sys/devices/system/cpu/cpu0/cpufreq/UV_mV_table
 cat_msg_sysfile "states_enabled: " /sys/devices/system/cpu/cpu0/cpufreq/states_enabled_table
 echo
 echo "freq/voltage  : ";cat /sys/devices/system/cpu/cpu0/cpufreq/frequency_voltage_table
