@@ -123,10 +123,19 @@ else
 fi
 
 # set cpu governor
-if $BB [[ "$cpugov" == "ondemand" || "$cpugov" == "conservative" || "$cpugov" == "smartassV2" ]];then
-    echo "CPU: found vaild cpugov: <$cpugov>"
-    echo $cpugov > /sys/devices/system/cpu/cpu0/cpufreq/scaling_governor
+# using ELIFs instead of "[[" because of ROMs using busyboxes with "]]" issues
+if $BB [ "$cpugov" == "ondemand" ];then echo "cpu: found vaild cpugov: <$cpugov>"
+elif $BB [ "$cpugov" == "smartassV2" ];then echo "cpu: found vaild cpugov: <$cpugov>"
+else
+    cpugov="conservative"
+    echo "cpu: using default governor <$cpugov>"
 fi
+echo $cpugov > /sys/devices/system/cpu/cpu0/cpufreq/scaling_governor
+
+#if $BB [[ "$cpugov" == "ondemand" || "$cpugov" == "conservative" || "$cpugov" == "smartassV2" ]];then
+    #echo "CPU: found vaild cpugov: <$cpugov>"
+    #echo $cpugov > /sys/devices/system/cpu/cpu0/cpufreq/scaling_governor
+#fi
 
 # parse undervolting
 if $BB [ ! -f /cache/midnight_block ];then
@@ -216,11 +225,25 @@ cat_msg_sysfile "panic: " /proc/sys/kernel/panic
 # set sdcard read_ahead
 echo; echo "read_ahead_kb"
 cat_msg_sysfile "default: " /sys/devices/virtual/bdi/default/read_ahead_kb
-if $BB [[ "$readahead" -eq 64 || "$readahead" -eq 128 || "$readahead" -eq 256 || "$readahead" -eq 512  || "$readahead" -eq 1024 || "$readahead" -eq 2048 || "$readahead" -eq 3096 ]];then
-    echo "CPU: found vaild readahead: <$readahead>"
+
+# using ELIFs instead of "[[" because of ROMs using busyboxes with "]]" issues
+if $BB [ "$readahead" -eq 64 ];then echo "read_ahead: found vaild value: <$readahead>"
+elif $BB [ "$readahead" -eq 128 ];then echo "read_ahead: found vaild value: <$readahead>"
+elif $BB [ "$readahead" -eq 256 ];then echo "read_ahead: found vaild value: <$readahead>"
+elif $BB [ "$readahead" -eq 512 ];then echo "read_ahead: found vaild value: <$readahead>"
+elif $BB [ "$readahead" -eq 1024 ];then echo "read_ahead: found vaild value: <$readahead>"
+elif $BB [ "$readahead" -eq 2048 ];then echo "read_ahead: found vaild value: <$readahead>"
+elif $BB [ "$readahead" -eq 3096 ];then echo "read_ahead: found vaild value: <$readahead>"
 else
     readahead=256
+    echo "read_ahead: setting default value <$readahead>"
 fi
+
+#if $BB [[ "$readahead" -eq 64 || "$readahead" -eq 128 || "$readahead" -eq 256 || "$readahead" -eq 512  || "$readahead" -eq 1024 || "$readahead" -eq 2048 || "$readahead" -eq 3096 ]];then
+    #echo "read_ahead: found vaild value: <$readahead>"
+#else
+    #readahead=256
+#fi
 
 echo $readahead > /sys/devices/virtual/bdi/179:0/read_ahead_kb
 echo $readahead > /sys/devices/virtual/bdi/179:8/read_ahead_kb
@@ -238,12 +261,17 @@ LOOP=`$BB ls -d /sys/block/loop*`
 MMC=`$BB ls -d /sys/block/mmc*`
 
 # set IO scheduler    
-if $BB [[ "$sched" == "noop" || "$sched" == "sio" ]];then
-    iosched=$sched    
-    echo "IO: found valid IO scheduler <$iosched>..."
-else
-    iosched="sio"    
-fi        
+
+if $BB [ "$sched" == "noop" ];then iosched=$sched;
+else iosched=$sched;
+fi
+
+#if $BB [[ "$sched" == "noop" || "$sched" == "sio" ]];then
+    #iosched=$sched    
+    #echo "IO: found valid IO scheduler <$iosched>..."
+#else
+    #iosched="sio"    
+#fi        
 
 # general IO tweaks
 for i in $MTD $MMC $LOOP;do
@@ -322,7 +350,7 @@ if $BB [ -f /data/local/$CONFFILE ];then
                 echo "/data/local/userinit.d: EXIT '$file' ($?)"
             done
         fi
-        echo $(date) USER INIT DONE from /data/local/init.d
+        echo $(date) USER INIT DONE from /data/local/userinit.d
     else
         echo "init.d execution deactivated, nothing to do."
     fi
