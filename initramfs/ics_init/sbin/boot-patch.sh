@@ -40,7 +40,7 @@ cat_msg_sysfile() {
 
 #initialize cpu
 uv100=0;uv200=0;uv400=0;uv800=0;uv1000=0;cpumax=1000000;
-
+sched="sio";cpugov="conservative";readahead="256";
 # app settings parsing
 # this gets all values directly from the app shared_prefs file, no need for
 # other config files.
