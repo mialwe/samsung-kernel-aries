@@ -9,7 +9,7 @@
 BB="/system/xbin/busybox"
 
 # backup and clean logfile
-$BB cp /data/user.log /data/user.log.bak
+$BB cp /data/user.log /data/last_user.log
 $BB rm /data/user.log
 
 # start logging
@@ -22,12 +22,26 @@ echo "************************************************"
 echo "MIDNIGHT-ICS BOOT LOG"
 echo "************************************************"
 echo
-
+echo "$(date)"
+echo
 # log basic system information
 echo -n "Kernel: ";$BB uname -r
 echo -n "PATH: ";echo $PATH
 echo -n "ROM: ";cat /system/build.prop|$BB grep ro.build.display.id
 echo -n "BusyBox:";$BB|$BB grep BusyBox
+
+if $BB [ -f /boot.txt ];then
+    echo;echo "----------------------------------------"
+    echo;echo "$(date) init bootlog"
+    cat /boot.txt
+    echo;echo "----------------------------------------"
+fi
+
+echo;echo "$(date) modules"
+ls -l /system/lib/modules
+
+echo;echo "$(date) modules loaded"
+$BB lsmod
 echo
 
 # print file contents <string messagetext><file output>
@@ -44,6 +58,7 @@ sched="sio";cpugov="conservative";readahead="256";
 # app settings parsing
 # this gets all values directly from the app shared_prefs file, no need for
 # other config files.
+echo "$(date) MidnightControl settings parsing"
 if $BB [ ! -f /cache/midnight_block ];then
     echo "APP: no blocker file present, proceeding..."
     xmlfile="/data/data/com.mialwe.midnight.control/shared_prefs/com.mialwe.midnight.control_preferences.xml"
@@ -86,16 +101,14 @@ else
 fi
 
 # partitions
-echo; echo "mount"
+echo; echo "$(date) mount"
 for i in $($BB mount | $BB grep relatime | $BB cut -d " " -f3);do
     busybox mount -o remount,noatime $i
 done
 mount
 
 # set cpu max freq
-echo; echo "cpu"
-
-#testing
+echo; echo "$(date) cpu"
 CONFFILE="midnight_options.conf"
 if $BB [ -f /data/local/$CONFFILE ];then
     echo "configfile /data/local/midnight_options.conf found, checking values..."
@@ -132,11 +145,6 @@ else
 fi
 echo $cpugov > /sys/devices/system/cpu/cpu0/cpufreq/scaling_governor
 
-#if $BB [[ "$cpugov" == "ondemand" || "$cpugov" == "conservative" || "$cpugov" == "smartassV2" ]];then
-    #echo "CPU: found vaild cpugov: <$cpugov>"
-    #echo $cpugov > /sys/devices/system/cpu/cpu0/cpufreq/scaling_governor
-#fi
-
 # parse undervolting
 if $BB [ ! -f /cache/midnight_block ];then
     if $BB [ "$uv1000" -lt 0 ];then uv1000=$(($uv1000*(-1)));else uv1000=0;fi
@@ -162,7 +170,7 @@ echo
 echo "freq/voltage  : ";cat /sys/devices/system/cpu/cpu0/cpufreq/frequency_voltage_table
 
 # vm tweaks
-echo; echo "vm"
+echo; echo "$(date) vm"
 echo "0" > /proc/sys/vm/swappiness                   # Not really needed as no /swap used...
 echo "1500" > /proc/sys/vm/dirty_writeback_centisecs # Flush after 20sec. (o:500)
 echo "1500" > /proc/sys/vm/dirty_expire_centisecs    # Pages expire after 20sec. (o:200)
@@ -186,7 +194,7 @@ cat_msg_sysfile "overcommit_memory: " /proc/sys/vm/overcommit_memory
 
 # security enhancements
 # rp_filter must be reset to 0 if TUN module is used (issues)
-echo; echo "sec"
+echo; echo "$(date) sec"
 echo 0 > /proc/sys/net/ipv4/ip_forward
 echo 0 > /proc/sys/net/ipv4/conf/all/rp_filter
 echo 2 > /proc/sys/net/ipv6/conf/all/use_tempaddr
@@ -201,12 +209,12 @@ echo -n "SEC: send_redirects :";cat /proc/sys/net/ipv4/conf/all/send_redirects
 echo -n "SEC: icmp_echo_ignore_broadcasts :";cat /proc/sys/net/ipv4/icmp_echo_ignore_broadcasts 
 
 # setprop tweaks
-echo; echo "prop"
+echo; echo "$(date) prop"
 setprop wifi.supplicant_scan_interval 180
 echo -n "wifi.supplicant_scan_interval (is this actually used?): ";getprop wifi.supplicant_scan_interval
 
 # kernel tweaks
-echo; echo "kernel"
+echo; echo "$(date) kernel"
 echo "NO_GENTLE_FAIR_SLEEPERS" > /sys/kernel/debug/sched_features
 echo 500 512000 64 2048 > /proc/sys/kernel/sem 
 echo 3000000 > /proc/sys/kernel/sched_latency_ns
@@ -223,7 +231,7 @@ cat_msg_sysfile "panic_on_oops: " /proc/sys/kernel/panic_on_oops
 cat_msg_sysfile "panic: " /proc/sys/kernel/panic
 
 # set sdcard read_ahead
-echo; echo "read_ahead_kb"
+echo; echo "$(date) read_ahead_kb"
 cat_msg_sysfile "default: " /sys/devices/virtual/bdi/default/read_ahead_kb
 
 # using ELIFs instead of "[[" because of ROMs using busyboxes with "]]" issues
@@ -239,12 +247,6 @@ else
     echo "read_ahead: setting default value <$readahead>"
 fi
 
-#if $BB [[ "$readahead" -eq 64 || "$readahead" -eq 128 || "$readahead" -eq 256 || "$readahead" -eq 512  || "$readahead" -eq 1024 || "$readahead" -eq 2048 || "$readahead" -eq 3096 ]];then
-    #echo "read_ahead: found vaild value: <$readahead>"
-#else
-    #readahead=256
-#fi
-
 echo $readahead > /sys/devices/virtual/bdi/179:0/read_ahead_kb
 echo $readahead > /sys/devices/virtual/bdi/179:8/read_ahead_kb
 cat_msg_sysfile "179.0: " /sys/devices/virtual/bdi/179:0/read_ahead_kb
@@ -255,23 +257,15 @@ echo 16 > /sys/block/mtdblock2/queue/read_ahead_kb # system
 echo 16 > /sys/block/mtdblock3/queue/read_ahead_kb # cache
 echo 64 > /sys/block/mtdblock6/queue/read_ahead_kb # datadata
 
-echo; echo "io"
+echo; echo "$(date) io"
 MTD=`$BB ls -d /sys/block/mtdblock*`
 LOOP=`$BB ls -d /sys/block/loop*`
 MMC=`$BB ls -d /sys/block/mmc*`
 
 # set IO scheduler    
-
 if $BB [ "$sched" == "noop" ];then iosched=$sched;
 else iosched=$sched;
-fi
-
-#if $BB [[ "$sched" == "noop" || "$sched" == "sio" ]];then
-    #iosched=$sched    
-    #echo "IO: found valid IO scheduler <$iosched>..."
-#else
-    #iosched="sio"    
-#fi        
+fi       
 
 # general IO tweaks
 for i in $MTD $MMC $LOOP;do
@@ -297,7 +291,7 @@ for i in $MTD $MMC $LOOP $RAM;do
 done
 
 # set vibration intensity
-echo;echo "vibration intensity"
+echo;echo "$(date) vibration intensity"
 if $BB [ ! -z $vibration_intensity ];then
     echo "found sensitivity value, setting..."
     echo $vibration_intensity > /sys/class/timed_output/vibrator/duty
@@ -307,7 +301,7 @@ else
 fi
 
 # enable touchwake
-echo;echo "touchwake"
+echo;echo "$(date) touchwake"
 if $BB [ "$touchwake" == "true" ];then
     echo "found setting, activating touchwake..."
     echo 1 > /sys/class/misc/touchwake/enabled
@@ -316,17 +310,8 @@ else
     echo "deactivated, nothing to do..."
 fi
 
-# debug output BLN
-echo;echo "bln"
-cat_msg_sysfile "/sys/class/misc/backlightnotification/enabled: " /sys/class/misc/backlightnotification/enabled
-
 # init.d support, executes all /system/etc/init.d/<S>scriptname files
-echo; echo "init.d"
-echo "creating /system/etc/init.d..."
-$BB mount -o remount,rw /system
-$BB mkdir -p /system/etc/init.d
-$BB mount -o remount,ro /system
-
+echo;echo "$(date) init.d/userinit.d"
 CONFFILE="midnight_options.conf"
 if $BB [ -f /data/local/$CONFFILE ];then
     echo "configfile /data/local/midnight_options.conf found, checking values..."
