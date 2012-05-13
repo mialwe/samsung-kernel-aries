@@ -16,11 +16,6 @@ $BB rm /data/user.log
 exec >>/data/user.log
 exec 2>&1
 
-# init some device lists
-MTD=`$BB ls -d /sys/block/mtdblock*`
-LOOP=`$BB ls -d /sys/block/loop*`
-MMC=`$BB ls -d /sys/block/mmc*`
-    
 # start logfile output
 echo
 echo "************************************************"
@@ -57,6 +52,54 @@ cat_msg_sysfile() {
     cat $SYSFILE
 }
 
+#initialize cpu
+uv100=0;uv200=0;uv400=0;uv800=0;uv1000=0;cpumax=1000000;
+sched="sio";cpugov="conservative";readahead="256";
+# app settings parsing
+# this gets all values directly from the app shared_prefs file, no need for
+# other config files.
+echo "$(date) MidnightControl settings parsing"
+if $BB [ ! -f /cache/midnight_block ];then
+    echo "APP: no blocker file present, proceeding..."
+    xmlfile="/data/data/com.mialwe.midnight.control/shared_prefs/com.mialwe.midnight.control_preferences.xml"
+    echo "APP: checking app preferences..."
+    if $BB [ -f $xmlfile ];then
+        echo "APP: preferences file found, parsing..."
+        sched=`$BB sed -n 's|<string name=\"midnight_io\">\(.*\)</string>|\1|p' $xmlfile`
+        limit800=`$BB awk -F"\"" ' /c_toggle_800\"/ {print $4}' $xmlfile`
+        cpugov=`$BB sed -n 's|<string name=\"midnight_cpu_gov\">\(.*\)</string>|\1|p' $xmlfile`
+        uvatboot=`$BB awk -F"\"" ' /c_toggle_uv_boot\"/ {print $4}' $xmlfile`
+        uv1000=`$BB awk -F"\"" ' /uv_1000\"/ {print $4}' $xmlfile`;
+        uv800=`$BB awk -F"\"" ' /uv_800\"/ {print $4}' $xmlfile`;
+        uv400=`$BB awk -F"\"" ' /uv_400\"/ {print $4}' $xmlfile`;
+        uv200=`$BB awk -F"\"" ' /uv_200\"/ {print $4}' $xmlfile`;
+        uv100=`$BB awk -F"\"" ' /uv_100\"/ {print $4}' $xmlfile`;
+        readahead=`$BB sed -n 's|<string name=\"midnight_rh\">\(.*\)</string>|\1|p' $xmlfile`
+        vibration_intensity=`$BB awk -F"\"" ' /vibration_intensity\"/ {print $4}' $xmlfile`
+        touchwake=`$BB awk -F"\"" ' /touchwake\"/ {print $4}' $xmlfile`
+        touchwake_timeout=`$BB awk -F"\"" ' /touchwake_timeout\"/ {print $4}' $xmlfile`
+        echo "APP: IO sched -> $sched"
+        echo "APP: limit800 -> $limit800"
+        echo "APP: cpugov -> $cpugov"
+        echo "APP: uv at boot -> $uvatboot"
+        echo "APP: uv1000 -> $uv1000"
+        echo "APP: uv800  -> $uv800"
+        echo "APP: uv400  -> $uv400"
+        echo "APP: uv200  -> $uv200"
+        echo "APP: uv100  -> $uv100"
+        echo "APP: readahead -> $readahead"
+        echo "APP: vibration intensity -> $vibration_intensity"
+        echo "APP: touchwake -> $touchwake"
+        echo "APP: touchwake timeout-> $touchwake_timeout"
+    else
+        echo "APP: preferences file not found."
+    fi
+else
+    echo "APP: blocker file found, not processing MidnightControl settings..."
+    echo "APP: removing blocker file..."
+    rm /cache/midnight_block
+fi
+
 # partitions
 echo; echo "$(date) mount"
 for i in $($BB mount | $BB grep relatime | $BB cut -d " " -f3);do
@@ -64,11 +107,11 @@ for i in $($BB mount | $BB grep relatime | $BB cut -d " " -f3);do
 done
 mount
 
+# set cpu max freq
+echo; echo "$(date) cpu"
 CONFFILE="midnight_options.conf"
-echo; echo "$(date) $CONFFILE"
 if $BB [ -f /data/local/$CONFFILE ];then
-
-    # set cpu max freq
+    echo "configfile /data/local/midnight_options.conf found, checking values..."
     if $BB [ "`/system/xbin/busybox grep OC1128 /data/local/$CONFFILE`" ]; then
         echo "oc1128 found, setting..."
         echo 1 > /sys/devices/virtual/misc/midnight_cpufreq/oc_enable
@@ -77,89 +120,45 @@ if $BB [ -f /data/local/$CONFFILE ];then
         echo "oc1128 not selected, using 1Ghz max..."
         echo 1000000 > /sys/devices/system/cpu/cpu0/cpufreq/scaling_max_freq
     fi
-
-    # set 800Mhz maxfreq if desired
-    if $BB [ "`/system/xbin/busybox grep MAX800 /data/local/$CONFFILE`" ]; then
-        echo "max800 found, setting..."
-        echo 800000 > /sys/devices/system/cpu/cpu0/cpufreq/scaling_max_freq
-    fi
-
-    # set cpu governor
-    if $BB [ "`/system/xbin/busybox grep ONDEMAND /data/local/$CONFFILE`" ]; then
-        echo "ONDEMAND found, setting..."
-        echo "ondemand" > /sys/devices/system/cpu/cpu0/cpufreq/scaling_governor
-    fi
-
-    # sdcard read_ahead
-    if $BB [ "`/system/xbin/busybox grep 512 /data/local/$CONFFILE`" ]; then
-        echo "readahead 512Kb found, setting..."
-        echo 512 > /sys/devices/virtual/bdi/179:0/read_ahead_kb
-        echo 512 > /sys/devices/virtual/bdi/179:8/read_ahead_kb
-    fi
-
-    # IO scheduler
-    if $BB [ "`/system/xbin/busybox grep NOOP /data/local/$CONFFILE`" ]; then
-        echo "NOOP scheduler found, setting..."
-        for i in $MTD $MMC $LOOP;do
-            echo "$iosched" > $i/queue/scheduler
-        done
-    fi
-
-    # touch_wake
-    if $BB [ "`/system/xbin/busybox grep TOUCHWAKE /data/local/$CONFFILE`" ]; then
-        echo "touchwake found, setting..."
-        echo 1 > /sys/class/misc/touchwake/enabled
-    fi
-
 else
-    echo "/data/local/$CONFFILE not found, skipping..."
+    echo "/data/local/midnight_options.conf not found, using 1Ghz max..."
+    echo 1000000 > /sys/devices/system/cpu/cpu0/cpufreq/scaling_max_freq
 fi
 
-# load cpufreq_stats module after oc has been en-/disabled
 sleep 1
 $BB insmod /system/lib/modules/cpufreq_stats.ko
 
-CONFFILE="midnight_uv.conf"
-echo; echo "$(date) $CONFFILE"
-if $BB [ -f /data/local/$CONFFILE ];then
-    # set uv values
-    if $BB [ "`/system/xbin/busybox grep UV1 /data/local/$CONFFILE`" ]; then
-        echo "UV1 found, setting..."
-        echo "0 0 25 50 75" > /sys/devices/system/cpu/cpu0/cpufreq/UV_mV_table
-    elif $BB [ "`/system/xbin/busybox grep UV2 /data/local/$CONFFILE`" ]; then
-        echo "UV2 found, setting..."
-        echo "0 0 25 75 100" > /sys/devices/system/cpu/cpu0/cpufreq/UV_mV_table
-    elif $BB [ "`/system/xbin/busybox grep UV3 /data/local/$CONFFILE`" ]; then
-        echo "UV3 found, setting..."
-        echo "0 0 50 75 125" > /sys/devices/system/cpu/cpu0/cpufreq/UV_mV_table
-    else
-        echo "using default values (no undervolting)..."
-    fi
+if $BB [ "$limit800" == "true" ];then
+    echo "found 800Mhz limit, activating..."
+    echo 800000 > /sys/devices/system/cpu/cpu0/cpufreq/scaling_max_freq
 else
-    echo "/data/local/$CONFFILE not found, skipping..."
+    echo "800Mhz limit deactivated, skipping..."
 fi
 
-CONFFILE="midnight_vibration.conf"
-echo; echo "$(date) $CONFFILE"
-if $BB [ -f /data/local/$CONFFILE ];then
-    # set uv values
-    if $BB [ "`/system/xbin/busybox grep VIB0 /data/local/$CONFFILE`" ]; then
-        echo "VIB0 found, setting..."
-        echo 20000 > /sys/class/timed_output/vibrator/duty
-    elif $BB [ "`/system/xbin/busybox grep VIB1 /data/local/$CONFFILE`" ]; then
-        echo "VIB1 found, setting..."
-        echo 25000 > /sys/class/timed_output/vibrator/duty
-    elif $BB [ "`/system/xbin/busybox grep VIB2 /data/local/$CONFFILE`" ]; then
-        echo "VIB2 found, setting..."
-        echo 30000 > /sys/class/timed_output/vibrator/duty
-    elif $BB [ "`/system/xbin/busybox grep VIB3 /data/local/$CONFFILE`" ]; then
-        echo "VIB3 found, setting..."
-        echo 35000 > /sys/class/timed_output/vibrator/duty
-    else
-        echo "using default value..."
-    fi
+# set cpu governor
+# using ELIFs instead of "[[" because of ROMs using busyboxes with "]]" issues
+if $BB [ "$cpugov" == "ondemand" ];then echo "cpu: found vaild cpugov: <$cpugov>"
+elif $BB [ "$cpugov" == "smartassV2" ];then echo "cpu: found vaild cpugov: <$cpugov>"
 else
-    echo "/data/local/$CONFFILE not found, skipping..."
+    cpugov="conservative"
+    echo "cpu: using default governor <$cpugov>"
+fi
+echo $cpugov > /sys/devices/system/cpu/cpu0/cpufreq/scaling_governor
+
+# parse undervolting
+if $BB [ ! -f /cache/midnight_block ];then
+    if $BB [ "$uv1000" -lt 0 ];then uv1000=$(($uv1000*(-1)));else uv1000=0;fi
+    if $BB [ "$uv800" -lt 0 ];then uv800=$(($uv800*(-1)));else uv800=0;fi
+    if $BB [ "$uv400" -lt 0 ];then uv400=$(($uv400*(-1)));else uv400=0;fi
+    if $BB [ "$uv200" -lt 0 ];then uv200=$(($uv200*(-1)));else uv200=0;fi
+    if $BB [ "$uv100" -lt 0 ];then uv100=$(($uv100*(-1)));else uv100=0;fi
+fi
+
+# set undervolting
+echo "CPU: values after parsing: $uv1000, $uv800, $uv400, $uv200, $uv100"
+if $BB [ "$uvatboot" == "true" ];then
+    echo "CPU: UV at boot enabled, setting values now..."
+    echo $uv1000 $uv800 $uv400 $uv200 $uv100 > /sys/devices/system/cpu/cpu0/cpufreq/UV_mV_table
 fi
 
 # debug output
@@ -169,11 +168,6 @@ cat_msg_sysfile "UV_mv         : " /sys/devices/system/cpu/cpu0/cpufreq/UV_mV_ta
 cat_msg_sysfile "states_enabled: " /sys/devices/system/cpu/cpu0/cpufreq/states_enabled_table
 echo
 echo "freq/voltage  : ";cat /sys/devices/system/cpu/cpu0/cpufreq/frequency_voltage_table
-echo
-cat_msg_sysfile "/sys/class/timed_output/vibrator/duty: " /sys/class/timed_output/vibrator/duty 
-cat_msg_sysfile "/sys/class/misc/touchwake/enabled: " /sys/class/misc/touchwake/enabled
-
-#--------------------- GENERAL TWEAK SECTION --------------------
 
 # vm tweaks
 echo; echo "$(date) vm"
@@ -239,6 +233,22 @@ cat_msg_sysfile "panic: " /proc/sys/kernel/panic
 # set sdcard read_ahead
 echo; echo "$(date) read_ahead_kb"
 cat_msg_sysfile "default: " /sys/devices/virtual/bdi/default/read_ahead_kb
+
+# using ELIFs instead of "[[" because of ROMs using busyboxes with "]]" issues
+if $BB [ "$readahead" -eq 64 ];then echo "read_ahead: found vaild value: <$readahead>"
+elif $BB [ "$readahead" -eq 128 ];then echo "read_ahead: found vaild value: <$readahead>"
+elif $BB [ "$readahead" -eq 256 ];then echo "read_ahead: found vaild value: <$readahead>"
+elif $BB [ "$readahead" -eq 512 ];then echo "read_ahead: found vaild value: <$readahead>"
+elif $BB [ "$readahead" -eq 1024 ];then echo "read_ahead: found vaild value: <$readahead>"
+elif $BB [ "$readahead" -eq 2048 ];then echo "read_ahead: found vaild value: <$readahead>"
+elif $BB [ "$readahead" -eq 3096 ];then echo "read_ahead: found vaild value: <$readahead>"
+else
+    readahead=256
+    echo "read_ahead: setting default value <$readahead>"
+fi
+
+echo $readahead > /sys/devices/virtual/bdi/179:0/read_ahead_kb
+echo $readahead > /sys/devices/virtual/bdi/179:8/read_ahead_kb
 cat_msg_sysfile "179.0: " /sys/devices/virtual/bdi/179:0/read_ahead_kb
 cat_msg_sysfile "179.8: " /sys/devices/virtual/bdi/179:8/read_ahead_kb
 
@@ -247,9 +257,19 @@ echo 16 > /sys/block/mtdblock2/queue/read_ahead_kb # system
 echo 16 > /sys/block/mtdblock3/queue/read_ahead_kb # cache
 echo 64 > /sys/block/mtdblock6/queue/read_ahead_kb # datadata
 
-echo; echo "$(date) io"    
+echo; echo "$(date) io"
+MTD=`$BB ls -d /sys/block/mtdblock*`
+LOOP=`$BB ls -d /sys/block/loop*`
+MMC=`$BB ls -d /sys/block/mmc*`
+
+# set IO scheduler    
+if $BB [ "$sched" == "noop" ];then iosched=$sched;
+else iosched=$sched;
+fi       
+
 # general IO tweaks
 for i in $MTD $MMC $LOOP;do
+    echo "$iosched" > $i/queue/scheduler
     echo 0 > $i/queue/rotational
     echo 0 > $i/queue/iostats
 done
@@ -270,7 +290,25 @@ for i in $MTD $MMC $LOOP $RAM;do
     echo
 done
 
-#--------------------- INITSCRIPT SECTION --------------------
+# set vibration intensity
+echo;echo "$(date) vibration intensity"
+if $BB [ ! -z $vibration_intensity ];then
+    echo "found sensitivity value, setting..."
+    echo $vibration_intensity > /sys/class/timed_output/vibrator/duty
+    cat_msg_sysfile "/sys/class/timed_output/vibrator/duty: " /sys/class/timed_output/vibrator/duty 
+else
+    echo "deactivated, nothing to do..."
+fi
+
+# enable touchwake
+echo;echo "$(date) touchwake"
+if $BB [ "$touchwake" == "true" ];then
+    echo "found setting, activating touchwake..."
+    echo 1 > /sys/class/misc/touchwake/enabled
+    cat_msg_sysfile "/sys/class/misc/touchwake/enabled: " /sys/class/misc/touchwake/enabled
+else
+    echo "deactivated, nothing to do..."
+fi
 
 # init.d support, executes all /system/etc/init.d/<S>scriptname files
 echo;echo "$(date) init.d/userinit.d"
