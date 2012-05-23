@@ -72,6 +72,8 @@ $BB mount -t yaffs2 /dev/block/mtdblock2 /system
 
 KV=`$BB uname -r`
 $BB echo "version: $KV"
+
+$BB mkdir -p /system/lib/modules
  
 if $BB [ "`/busybox grep $KV /system/lib/modules/ansi_cprng.ko`" ]; then
     $BB echo "kernel files already installed, nothing to do"
@@ -96,13 +98,15 @@ else
     fi
 
     APP="MidnightControl.apk"
-    $BB echo "coping kernel app"
-    $BB rm /system/app/$APP
-    $BB rm /data/dalvik-cache/*$APP*
-    $BB cp /files/$APP /system/app/
-    $BB chown 0.0 /system/app/$APP
-    $BB chmod 644 /system/app/$APP    
-
+    if $BB [ -f /files/$APP ];then
+        $BB echo "coping kernel app"
+        $BB rm /system/app/$APP
+        $BB rm /data/dalvik-cache/*$APP*
+        $BB cp /files/$APP /system/app/
+        $BB chown 0.0 /system/app/$APP
+        $BB chmod 644 /system/app/$APP    
+    fi
+    
     $BB echo "updating lights.aries.so..."
     $BB mv /files/hw/* /system/lib/hw/
     $BB chmod 644 /system/lib/hw/lights.aries.so
@@ -132,7 +136,8 @@ elif ! $BB test -e /system/build.prop ; then
   	else
         $BB echo "cm9 update not found, doing nothing"
     fi
-
+    $BB umount /sdcard
+    $BB umount /cache
     $BB echo "moving ics_rec_init to /..."
     $BB mv /ics_rec_init/* /
 	$BB echo 0 > /sys/class/power_supply/battery/charging_mode_booting
