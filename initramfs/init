@@ -54,6 +54,9 @@ $BB echo -n "$($BB date +%H:%M:%S) - ";$BB echo -n "commandline: "; $BB cat /pro
 
 $BB echo -n "$($BB date +%H:%M:%S) - ";$BB echo "recreating /system/lib/modules if needed..."
 $BB mkdir -p /system/lib/modules
+
+$BB echo -n "$($BB date +%H:%M:%S) - ";$BB echo "copying LARGERAM libs..."
+$BB cp /files/lib/* /system/lib/
  
 if $BB [ "`/busybox grep $KV /system/lib/modules/bcm4329.ko`" ]; then
     $BB echo -n "$($BB date +%H:%M:%S) - ";$BB echo "kernel files already installed, nothing to do"
