@@ -36,7 +36,11 @@
 #define IOCTL_MFC_GET_CONFIG			0x00800102
 
 /* MFC H/W support maximum 32 extra DPB */
+#ifdef CONFIG_LARGERAM
+#define MFC_MAX_EXTRA_DPB                      4
+#else
 #define MFC_MAX_EXTRA_DPB                      5
+#endif
 
 #define ENC_PROFILE_LEVEL(profile, level)      ((profile) | ((level) << 8))
 

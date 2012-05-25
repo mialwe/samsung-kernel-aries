@@ -279,9 +279,14 @@ config CPU_DIDLE
 	depends on CPU_IDLE
 	default y
 
-
 config WIFI_CONTROL_FUNC
        bool "Enable WiFi control function abstraction"
        help
          Enables Power/Reset/Carddetect function abstraction
+
+config LARGERAM
+  bool "LARGERAM"
+  default n
+  help
+    Enables ~369Mb RAM config, ROM must support this.
 endif
