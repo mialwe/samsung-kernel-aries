@@ -412,7 +412,7 @@ static struct attribute *dbs_attributes[] = {
 
 static struct attribute_group dbs_attr_group = {
 	.attrs = dbs_attributes,
-	.name = "conservative",
+	.name = "smoove",
 };
 
 /************************** sysfs end ************************/
