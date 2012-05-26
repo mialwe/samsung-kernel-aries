@@ -291,9 +291,9 @@ static ssize_t dvfslock_ctrl(const char *buf, size_t count)
 		return -EINVAL;
 
 	if (dlevel)
-		dlevel = L3;
+		dlevel = L4; // 800Mhz
 	else
-		dlevel = L2;
+		dlevel = L3; // 1Ghz
 
 	printk(KERN_DEBUG "%s : level=%d, time=%d\n", __func__, dlevel, dtime_msec);
 
