@@ -47,6 +47,7 @@ $BB echo -n "$($BB date +%H:%M:%S) - ";$BB echo "mounting devices..."
 $BB mount -t proc proc /proc
 $BB mount -t sysfs sysfs /sys
 $BB mount -t yaffs2 /dev/block/mtdblock2 /system
+$BB mount -t yaffs2 /dev/block/mtdblock3 /cache
 
 KV=`$BB uname -r`
 $BB echo -n "$($BB date +%H:%M:%S) - ";$BB echo "version: $KV"
@@ -106,6 +107,7 @@ if $BB test -e /cache/.startrecovery || $BB grep -q bootmode=2 /proc/cmdline ; t
 elif ! $BB test -e /system/build.prop ; then
 	# emergency boot
     $BB echo -n "$($BB date +%H:%M:%S) - ";$BB echo "build.prop not found, starting emergency boot..."
+    $BB umount /cache
     erase_image cache
     $BB mount -t yaffs2 /dev/block/mtdblock3 /cache
     $BB mkdir /cache/recovery
