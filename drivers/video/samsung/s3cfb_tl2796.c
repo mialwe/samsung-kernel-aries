@@ -83,7 +83,7 @@ struct s5p_lcd *lcd_;
 u32 color_mult[3] = { U32_MAX, U32_MAX, U32_MAX };
 
 // v0 offset hack from supercurio's "Voodoo Color"
-u32 hacky_v1_offset[3] = {0, 0, 0};
+u32 hacky_v1_offset[3] = {-7, -7, -10};
 
 static u32 gamma_lookup(struct s5p_lcd *lcd, u8 brightness, u32 val, int c)
 {
@@ -738,7 +738,26 @@ static ssize_t nightmode_store(struct device *dev, struct device_attribute *attr
 	return size;
 }
 
+static ssize_t gamma_show(struct device *dev, struct device_attribute *attr, char *buf)
+{
+	return sprintf(buf, "%u\n", hacky_v1_offset[0]);
+}
+
+static ssize_t gamma_store(struct device *dev, struct device_attribute *attr, const char *buf, size_t size)
+{
+	u32 value;
+	if (sscanf(buf, "%u", &value) == 1)
+	{
+		hacky_v1_offset[0] = (-1)*value;
+		hacky_v1_offset[1] = (-1)*value;
+		hacky_v1_offset[2] = (-1)*value-3;
+		update_brightness(lcd_);
+	}
+	return size;
+}
+
 static DEVICE_ATTR(nightmode, S_IRUGO | S_IWUGO, nightmode_show, nightmode_store);
+static DEVICE_ATTR(gamma, S_IRUGO | S_IWUGO, gamma_show, gamma_store);
 static DEVICE_ATTR(min_brightness, S_IRUGO | S_IWUGO, min_brightness_show, min_brightness_store);
 static DEVICE_ATTR(red_multiplier, S_IRUGO | S_IWUGO, red_multiplier_show, red_multiplier_store);
 static DEVICE_ATTR(green_multiplier, S_IRUGO | S_IWUGO, green_multiplier_show, green_multiplier_store);
@@ -750,6 +769,7 @@ static DEVICE_ATTR(blue_v1_offset, S_IRUGO | S_IWUGO, blue_v1_offset_show, blue_
 static struct attribute *color_tuning_attributes[] = {
 	&dev_attr_min_brightness.attr,
     &dev_attr_nightmode.attr,
+    &dev_attr_gamma.attr,
 	&dev_attr_red_multiplier.attr,
 	&dev_attr_green_multiplier.attr,
 	&dev_attr_blue_multiplier.attr,
