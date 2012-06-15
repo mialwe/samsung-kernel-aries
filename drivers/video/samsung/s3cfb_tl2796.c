@@ -46,7 +46,7 @@ extern void init_mdnie_class(void);
 #endif
 
 static unsigned int min_brightness = 1; // let users define custom light levels...
-static unsigned int bmult = 0;          // 0 = nightmode off, 1 = nightmode (fixed brightness)
+static unsigned int nightmode = 0;      // 0 = nightmode off, 1 = nightmode (fixed brightness)
 
 static const struct tl2796_gamma_adj_points default_gamma_adj_points = {
 	.v0 = BV_0,
@@ -145,16 +145,9 @@ static void setup_gamma_regs(struct s5p_lcd *lcd, u16 gamma_regs[])
 	u8 brightness = lcd->bl;
 	const struct tl2796_gamma_adj_points *bv = lcd->gamma_adj_points;
 
-    /**
-     * nightmode toggle
-     * bmult = 0 -> brightness not adjusted
-     * bmult = 1 -> nightmode on, brightness always adjusted to min_brightness
-     * keeping the sysfs tunable "brightness_multiplier" (bmult) for now, might be renamed
-     * later to "lock_min_brightness" or similar...
-     */
-    u8 brightness_orig = lcd->bl; 
-    brightness = (bmult != 0) ? min_brightness : brightness;
-    brightness = (brightness > brightness_orig || brightness < min_brightness) ? min_brightness : brightness;
+    if (nightmode != 0){
+        brightness = 1;
+    }
 
 	for (c = 0; c < 3; c++) {
 		u32 adj;
@@ -729,23 +722,23 @@ static ssize_t min_brightness_store(struct device *dev, struct device_attribute 
 	return size;
 }
 
-static ssize_t brightness_multiplier_show(struct device *dev, struct device_attribute *attr, char *buf)
+static ssize_t nightmode_show(struct device *dev, struct device_attribute *attr, char *buf)
 {
-	return sprintf(buf, "%u\n", bmult);
+	return sprintf(buf, "%u\n", nightmode);
 }
 
-static ssize_t brightness_multiplier_store(struct device *dev, struct device_attribute *attr, const char *buf, size_t size)
+static ssize_t nightmode_store(struct device *dev, struct device_attribute *attr, const char *buf, size_t size)
 {
 	u32 value;
 	if (sscanf(buf, "%u", &value) == 1)
 	{
-		bmult = value;
+		nightmode = (value > 0) ? 1 : 0;
 		update_brightness(lcd_);
 	}
 	return size;
 }
 
-static DEVICE_ATTR(brightness_multiplier, S_IRUGO | S_IWUGO, brightness_multiplier_show, brightness_multiplier_store);
+static DEVICE_ATTR(nightmode, S_IRUGO | S_IWUGO, nightmode_show, nightmode_store);
 static DEVICE_ATTR(min_brightness, S_IRUGO | S_IWUGO, min_brightness_show, min_brightness_store);
 static DEVICE_ATTR(red_multiplier, S_IRUGO | S_IWUGO, red_multiplier_show, red_multiplier_store);
 static DEVICE_ATTR(green_multiplier, S_IRUGO | S_IWUGO, green_multiplier_show, green_multiplier_store);
@@ -756,7 +749,7 @@ static DEVICE_ATTR(blue_v1_offset, S_IRUGO | S_IWUGO, blue_v1_offset_show, blue_
 
 static struct attribute *color_tuning_attributes[] = {
 	&dev_attr_min_brightness.attr,
-	&dev_attr_brightness_multiplier.attr,
+    &dev_attr_nightmode.attr,
 	&dev_attr_red_multiplier.attr,
 	&dev_attr_green_multiplier.attr,
 	&dev_attr_blue_multiplier.attr,
