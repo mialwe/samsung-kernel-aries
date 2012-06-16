@@ -34,7 +34,7 @@
 
 int exp_UV_mV[8] = { 0 };
 extern unsigned int freq_uv_table[8][3];
-int enabled_freqs[7] = { 1, 1, 1, 1, 1, 1, 1, 1 };
+int enabled_freqs[8] = { 1, 1, 1, 1, 1, 1, 1, 1 };
 
 /**
  * The "cpufreq driver" - the arch- or hardware-dependent low
@@ -662,7 +662,7 @@ static ssize_t store_UV_mV_table(struct cpufreq_policy *policy,
 
 	ret = sscanf(buf, "%d %d %d %d %d %d %d %d", &exp_UV_mV[0], &exp_UV_mV[1], &exp_UV_mV[2], &exp_UV_mV[3], &exp_UV_mV[4], &exp_UV_mV[5], &exp_UV_mV[6], &exp_UV_mV[7]);
 
-	if(ret != 1) {
+	if(ret != 8) {
 		return -EINVAL;
 	}
 	else
