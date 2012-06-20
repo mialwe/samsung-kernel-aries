@@ -49,7 +49,6 @@ $BB lsmod
 #-------------------------------------------------------------------------------
 # cpu
 #-------------------------------------------------------------------------------
-echo; echo "0 0 0 0 0 25 50 75" > /sys/devices/system/cpu/cpu0/cpufreq/UV_mV_table
 cat_msg_sysfile "max           : " /sys/devices/system/cpu/cpu0/cpufreq/scaling_max_freq
 cat_msg_sysfile "gov           : " /sys/devices/system/cpu/cpu0/cpufreq/scaling_governor
 cat_msg_sysfile "UV_mv         : " /sys/devices/system/cpu/cpu0/cpufreq/UV_mV_table
@@ -61,7 +60,6 @@ echo
 #-------------------------------------------------------------------------------
 # touchwake
 #-------------------------------------------------------------------------------
-echo 1 > /sys/class/misc/touchwake/enabled
 cat_msg_sysfile "/sys/class/misc/touchwake/enabled: " /sys/class/misc/touchwake/enabled
 
 #-------------------------------------------------------------------------------
@@ -203,6 +201,16 @@ if cd /system/etc/init.d >/dev/null 2>&1 ; then
     done
 fi
 echo $(date) USER INIT DONE from /system/etc/init.d
+echo $(date) USER INIT START from /data/local/userinit.d
+if cd /data/local/userinit.d >/dev/null 2>&1 ; then
+    for file in S* ; do
+        if ! ls "$file" >/dev/null 2>&1 ; then continue ; fi
+        echo "/data/local/userinit.d: START '$file'"
+        /system/bin/sh "$file"
+        echo "/data/local/userinit.d: EXIT '$file' ($?)"
+    done
+fi
+echo $(date) USER INIT DONE from /data/local/userinit.d
 
 # fin
 echo "mounting rootfs readonly..."
