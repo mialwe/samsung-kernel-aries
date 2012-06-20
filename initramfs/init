@@ -104,6 +104,8 @@ if $BB test -e /cache/.startrecovery || $BB grep -q bootmode=2 /proc/cmdline ; t
     $BB echo -n "$($BB date +%H:%M:%S) - ";$BB echo "moving recovery to /..."
 	$BB mv /recovery/* /
 	$BB echo 0 > /sys/class/power_supply/battery/charging_mode_booting
+    $BB rm -f /cache/.startrecovery
+    $BB umount /cache
 elif ! $BB test -e /system/build.prop ; then
 	# emergency boot
     $BB echo -n "$($BB date +%H:%M:%S) - ";$BB echo "build.prop not found, starting emergency boot..."
